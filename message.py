@@ -60,9 +60,14 @@ class Message(Protocol):
         ...
 
     def encode(self) -> bytes:
-        def ConnectRequest(userid : bytes, lenghtID : bytes, lenghtPWD : bytes, password : bytes):
-            
-            struct.pack(fmt :str, userid, password)-> bytes
+        def ConnectRequest(lenghtID : bytes, lenghtPWD : bytes, passwd : bytes):
+            lenghtID = len(self.userid)
+            lenghtPWD = len(passwd)
+
+
+            struct.pack('QBBBB', lenghtID, lenghtPWD, self.userid, passwd)
+            if self.userid = 0 :
+                    raise ValueError
 
 
 """
