@@ -57,4 +57,6 @@ class Message(Protocol):
         ...
 
     def encode(self) -> bytes:
-        ...
+        def ConnectRequest(userid : bytes, lenghtID : bytes, lenghtPWD : bytes):
+            """self.code.CONNECT_REQUEST"""
+        
