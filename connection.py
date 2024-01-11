@@ -36,6 +36,7 @@ class Listener:
 
     def __init__(self, socket: socket) -> None:
         self.my_socket = socket
+        self.list_of_accepted = []
 
     def __enter__(self) -> Listener:
         return self
@@ -64,8 +65,7 @@ class Server:
         ...
 
     def listen(self, address: tuple[str, int]) -> Listener:
-        ...
-
+        
         new_socket = socket()
         new_socket.bind(address)
         new_socket.listen()
@@ -78,8 +78,6 @@ class Client:
         ...
 
     def connect(self, address: tuple[str, int]) -> Connection:
-        ...
-
         new_socket = socket()
         new_socket.connect(address)
         return Connection(new_socket)
