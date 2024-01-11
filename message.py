@@ -3,6 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import AnyStr, Protocol
 from enum import IntEnum
+import struct
 
 message = tuple[int, datetime, int, AnyStr]
 
@@ -57,4 +58,7 @@ class Message(Protocol):
         ...
 
     def encode(self) -> bytes:
-        ...
+        def MessageRequest(self, thread : bytes, nbrmsg : bytes ):
+            code_msgrequest = bytes(self.code.MESSAGES_REQUEST)
+            userid_msgrequest = bytes(self.userid)
+            msgrequest = struct.pack(bytes,code_msgrequest, userid_msgrequest, thread, nbrmsg)
