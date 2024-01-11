@@ -72,3 +72,6 @@ class Message(Protocol):
             code_postrequest = self.code.POST_REQUEST
             userid_postrequest = self.userid
             postrequest = struct.pack('BQQBH', code_postrequest, userid_postrequest, threadid, lenghtmsg, message)
+
+        def PostResponse():
+            ...
