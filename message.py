@@ -58,7 +58,10 @@ class Message(Protocol):
         ...
 
     def encode(self) -> bytes:
-        def MessageRequest(self, thread : bytes, nbrmsg : bytes ):
-            code_msgrequest = bytes(self.code.MESSAGES_REQUEST)
-            userid_msgrequest = bytes(self.userid)
-            msgrequest = struct.pack(bytes,code_msgrequest, userid_msgrequest, thread, nbrmsg)
+
+        def MessageRequest(threadid : bytes, nbrmsg : bytes ) -> bytes :
+            code_msgrequest = self.code.MESSAGES_REQUEST
+            userid_msgrequest = self.userid
+            msgrequest = struct.pack(fmt: bytes,code_msgrequest, userid_msgrequest, threadid, nbrmsg) -> bytes
+            return msgrequest
+
