@@ -13,9 +13,11 @@ class Connection:
         self.my_socket = socket
 
     def __enter__(self) -> Connection:
+        """Return the connection. Context manager method."""
         return self
 
     def __exit__(self, exc_type: type[Exception] | None, exc_value: Exception | None, exc_tb: TracebackType | None):
+        """Close the socket of the connection. Context manager method. See `socket.close`."""
         self.close()
 
     def send(self, data: bytes):
@@ -91,6 +93,7 @@ class Server:
         ...
 
     def listen(self, address: tuple[str, int]) -> Listener:
+        """Listen for connections made to the socket of the server. See `socket.bind` and `socket.listen`."""
         
         new_socket = socket()
         new_socket.bind(address)
