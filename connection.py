@@ -7,8 +7,10 @@ from socket import socket
 
 class Connection:
 
+    my_socket: socket
+
     def __init__(self, socket: socket) -> None:
-        ...
+        self.my_socket = socket
 
     def __enter__(self) -> Connection:
         return self
@@ -17,16 +19,40 @@ class Connection:
         self.close()
 
     def send(self, data: bytes):
-        ...
+        """Send data to the socket of the connection. See `socket.send`.
+        
+        Args:
+            data (bytes): Data to send.
+
+        """
+        nb_bytes : int = self.my_socket.send(data)
+        print(f"Sent {nb_bytes} bytes")
 
     def recv(self) -> bytes:
-        ...
+        """Receive data from the socket of the connection. See `socket.recv`.
+        
+        Returns:
+            bytes: Data received.
+
+        """
+        data : bytes = self.my_socket.recv(1024)
+        print(f"Received {len(data)} bytes")
+        return data
 
     def fileno(self) -> int:
-        ...
+        """Return the file descriptor of the socket of the connection. See `socket.fileno`.
+        
+        Returns:
+            int: File descriptor of the socket of the connection.
+
+        """
+        return self.my_socket.fileno()
 
     def close(self) -> None:
-        ...
+        """Close the socket of the connection. See `socket.close`.
+        
+        """
+        self.my_socket.close()
 
 
 class Listener:
