@@ -90,7 +90,7 @@ def split_window(window: curses.window, line: int) -> tuple[curses.window, curse
 
 
 def main(window: curses.window, address: tuple[str, int], username: str, password: str):
-    ERASECHAR: int = int.from_bytes(curses.erasechar())
+    ERASECHAR: int = int.from_bytes(curses.erasechar(), byteorder='big')
 
     curses.echo()
     curses.init_pair(1, curses.COLOR_RED, curses.COLOR_BLACK)
