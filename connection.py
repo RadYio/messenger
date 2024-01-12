@@ -73,6 +73,15 @@ class Listener:
         self.close()
 
     def accept(self) -> Connection:
+        """Accept a connection. See `socket.accept`.
+        
+        Add the address of the accepted connection to the list of accepted connections.
+
+        Returns:
+        
+            Connection: Connection accepted.
+            
+        """
         socket_accepted, address = self.my_socket.accept()
         self.list_of_accepted.append(address)
         return Connection(socket_accepted)
