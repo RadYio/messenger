@@ -88,9 +88,8 @@ class Listener:
         """
         
         socket_accepted, address = self.my_socket.accept()
-        ssl_socket = self.context.wrap_socket(socket_accepted, server_side=True)
         self.list_of_accepted.append(address)
-        return Connection(ssl_socket)
+        return Connection(socket_accepted)
 
     def last_accepted(self) -> tuple[str, int] | None:
         return self.list_of_accepted[-1] if self.list_of_accepted else None
