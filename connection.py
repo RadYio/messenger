@@ -108,8 +108,6 @@ class Server:
         
         self.context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
         self.context.load_cert_chain(certfile=certfile, keyfile=keyfile, password=password)
-        self.context.check_hostname = False  # Disable hostname verification
-        self.context.verify_mode = ssl.CERT_NONE  # Disable certificate verification
 
     def listen(self, address: tuple[str, int]) -> Listener:
         """Listen for connections made to the socket of the server. See `socket.bind` and `socket.listen`."""
