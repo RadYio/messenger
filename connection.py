@@ -2,7 +2,9 @@ from __future__ import annotations
 
 from types import TracebackType
 
-from socket import socket
+from socket import socket, SOCK_STREAM
+import ssl
+
 
 
 class Connection:
@@ -13,9 +15,11 @@ class Connection:
         self.my_socket = socket
 
     def __enter__(self) -> Connection:
+        """Return the connection. Context manager method."""
         return self
 
     def __exit__(self, exc_type: type[Exception] | None, exc_value: Exception | None, exc_tb: TracebackType | None):
+        """Close the socket of the connection. Context manager method. See `socket.close`."""
         self.close()
 
     def send(self, data: bytes):
@@ -58,11 +62,13 @@ class Connection:
 class Listener:
 
     my_socket: socket
+    context: ssl.SSLContext
     list_of_accepted: list[tuple[str, int]]
 
     def __init__(self, socket: socket) -> None:
         self.my_socket = socket
         self.list_of_accepted = []
+        self.context = ssl.create_default_context()
 
     def __enter__(self) -> Listener:
         return self
@@ -71,9 +77,20 @@ class Listener:
         self.close()
 
     def accept(self) -> Connection:
+        """Accept a connection. See `socket.accept`.
+        
+        Add the address of the accepted connection to the list of accepted connections.
+
+        Returns:
+        
+            Connection: Connection accepted.
+            
+        """
+        
         socket_accepted, address = self.my_socket.accept()
+        ssl_socket = self.context.wrap_socket(socket_accepted, server_side=True)
         self.list_of_accepted.append(address)
-        return Connection(socket_accepted)
+        return Connection(ssl_socket)
 
     def last_accepted(self) -> tuple[str, int] | None:
         return self.list_of_accepted[-1] if self.list_of_accepted else None
@@ -88,22 +105,36 @@ class Listener:
 class Server:
 
     def __init__(self, certfile: str, keyfile: str | None = None, password: str | None = None) -> None:
-        ...
+        
+        self.context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
+        self.context.load_cert_chain(certfile=certfile, keyfile=keyfile, password=password)
 
     def listen(self, address: tuple[str, int]) -> Listener:
+        """Listen for connections made to the socket of the server. See `socket.bind` and `socket.listen`."""
         
-        new_socket = socket()
+        new_socket = self.context.wrap_socket(socket(type=SOCK_STREAM),
+                                                server_side=True # server side
+                                                )
         new_socket.bind(address)
         new_socket.listen()
+
         return Listener(new_socket)
 
 
 class Client:
 
     def __init__(self) -> None:
-        ...
+        
+        self.context = ssl.create_default_context()
+        self.context.check_hostname = False  # Disable hostname verification
+        self.context.verify_mode = ssl.CERT_NONE  # Disable certificate verification
 
     def connect(self, address: tuple[str, int]) -> Connection:
-        new_socket = socket()
+
+        
+        new_socket = self.context.wrap_socket(socket(type=SOCK_STREAM),
+                                                server_side=False, # client side
+                                                server_hostname=address[0]
+                                                )
         new_socket.connect(address)
         return Connection(new_socket)
