@@ -55,37 +55,37 @@ class Message(Protocol):
     code: Code
     userid: int
 
+
+    #def __init__(self):
+ 
     @classmethod
     def decode(cls, data: bytes) -> Message:
         ...
 
     def encode(self) -> bytes:
-        def ConnectRequest(lenghtID : bytes, lenghtPWD : bytes, passwd : bytes):
-            lenghtID = len(self.userid)
-            lenghtPWD = len(passwd)
 
+        def connectRequest(username : bytes, passwd: bytes):
 
-            struct.pack('QBBBB', lenghtID, lenghtPWD, self.userid, passwd)
-            if self.userid = 0 :
+            length_id : bytes = bytes(len(username))
+            length_pwd : bytes = bytes(len(passwd))
+
+            start_of_request = struct.pack('BQBB', self.code.CONNECT_REQUEST, self.userid, length_id, length_pwd)
+
+            if self.userid == 0 :
                     raise ValueError
-
-
-"""
-str(userid).encode("utf-8")
-str(password).encode("utf-8")
-"""
-
-
-"""encoded = bytes(fonction, 'utf-8')"""
             
-"""self.code.CONNECT_REQUEST"""
+            completed_request = start_of_request + length_id + length_pwd + username + passwd
+            
+            return connectRequest
+        
 
-"""size = 5
+        def connectResponse():
 
-arr = bytes(size)
+            struct.pack('Q',bytes(self.userid))
 
-print(arr)
-
-résultat: b'\x00\x00\x00\x00\x00'
-
-"""
+            if self.userid == 0 :
+                    raise ValueError
+            
+        def userRequest():
+             
+            
