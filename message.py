@@ -207,15 +207,16 @@ class UsersRequest(Message):
     def __init__(self, userid : int, nbr_user_request : bytes, nbr_userid : bytes):
         self.userid = userid
         self.nbr_user_request = nbr_user_request
-        "self.nbr_userid = nbr_userid*nbr_user_request" #CORRECTION
+        for x in range(int(nbr_user_request)):  #test
+            nbr_userid = nbr_userid * x
 
     @classmethod
     def decode(cls, data: bytes) -> Message:
-        (_, userid, nbr_user_request, "nbr_userid, nbr_userid") = struct.unpack('BQBQQ', data) #CORRECTION
-        return UsersRequest(userid, nbr_user_request, "nbr_userid")
+        (_, userid, nbr_user_request, nbr_userid) = struct.unpack('BQBQ', data)
+        return UsersRequest(userid, nbr_user_request, nbr_userid)
 
     def encode(self) -> bytes:
-        return struct.pack('BQBQQ', self.code, self.userid, self.nbr_user_request, "self.nbr_userid, self.nbr_userid") #CORRECTION
+        return struct.pack('BQBQ', self.code, self.userid, self.nbr_user_request, self.nbr_userid)
 
 
 
