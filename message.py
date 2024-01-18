@@ -148,41 +148,49 @@ class PostResponse(Message):
 
 class ConnectRequest(Message):
 
-    username : int
-    passwd : int
-    #length_id : bytes = bytes(len(username))
-    #length_pwd : bytes = bytes(len(passwd))
+    code = Code.CONNECT_REQUEST
+    username : bytes
+    passwd : bytes
+    length_id : bytes
+    length_pwd : bytes
 
-    def __init__(self, username : bytes, passwd : bytes, length_id : bytes, length_pwd : bytes):
-         """self.username = username
+    def __init__(self, username : bytes, passwd : bytes):
+         self.username = username
          self.passwd = passwd
-         self.length_id = length_id
-         self.passwd = passwd"""
+         self.length_id = bytes(len(username))
+         self.length_pwd = bytes(len(passwd))
 
     @classmethod
     def decode(cls, data: bytes) -> Message:
-        raise ValueError
+        ...
 
     def encode(self) -> bytes:
-        raise ValueError
+        return struct.pack('BQBB', self.code, self.username, self.passwd, self.length_id, self.length_pwd)
 
 class ConnectResponse(Message):
     
+    code = Code.CONNECT_RESPONSE
+    userid : int
 
-    def __init__(self):
-         ...
+    def __init__(self, userid : int):
+        self.userid = userid
+
     @classmethod
     def decode(cls, data: bytes) -> Message:
         ...
 
     def encode(self) -> bytes:
-        ...
+        return struct.pack('BQ', self.code, self.userid)
 
 class UserRequest(Message):
     
+    code = Code.USERS_REQUEST
+    userid : int
+    nbr_request : int
 
-    def __init__(self):
-         ...
+    def __init__(self, userid : int, ):
+
+
     @classmethod
     def decode(cls, data: bytes) -> Message:
         ...
@@ -192,7 +200,8 @@ class UserRequest(Message):
 
 
 class UserResponse(Message):
-    
+
+    code = Code.USERS_RESPONSE    
 
     def __init__(self,):
          ...
@@ -202,13 +211,7 @@ class UserResponse(Message):
 
     def encode(self) -> bytes:
         ...
-
-#m 
-
-
-        #start_of_request = struct.pack
-
-    
+  
     #start_of_request = struct.pack('BQBB', self.code.CONNECT_REQUEST, self.userid, length_id, length_pwd)
 
      #       if self.userid == 0 :
