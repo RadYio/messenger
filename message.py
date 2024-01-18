@@ -55,37 +55,93 @@ class Message(Protocol):
     code: Code
     userid: int
 
-
-    #def __init__(self):
- 
     @classmethod
     def decode(cls, data: bytes) -> Message:
         ...
 
     def encode(self) -> bytes:
+        ...
 
-        def connectRequest(username : bytes, passwd: bytes):
 
-            length_id : bytes = bytes(len(username))
-            length_pwd : bytes = bytes(len(passwd))
+class ConnectRequest(Message):
 
-            start_of_request = struct.pack('BQBB', self.code.CONNECT_REQUEST, self.userid, length_id, length_pwd)
+    username : int
+    passwd : int
+    #length_id : bytes = bytes(len(username))
+    #length_pwd : bytes = bytes(len(passwd))
 
-            if self.userid == 0 :
-                    raise ValueError
+    def __init__(self, username : bytes, passwd : bytes, length_id : bytes, length_pwd : bytes):
+         """self.username = username
+         self.passwd = passwd
+         self.length_id = length_id
+         self.passwd = passwd"""
+
+    @classmethod
+    def decode(cls, data: bytes) -> Message:
+        raise ValueError
+
+    def encode(self) -> bytes:
+        raise ValueError
+
+class ConnectResponse(Message):
+    
+
+    def __init__(self):
+         ...
+    @classmethod
+    def decode(cls, data: bytes) -> Message:
+        ...
+
+    def encode(self) -> bytes:
+        ...
+
+class UserRequest(Message):
+    
+
+    def __init__(self):
+         ...
+    @classmethod
+    def decode(cls, data: bytes) -> Message:
+        ...
+
+    def encode(self) -> bytes:
+        ...
+
+
+class UserResponse(Message):
+    
+
+    def __init__(self,):
+         ...
+    @classmethod
+    def decode(cls, data: bytes) -> Message:
+        ...
+
+    def encode(self) -> bytes:
+        ...
+
+
+
+
+        #start_of_request = struct.pack
+
+    
+    #start_of_request = struct.pack('BQBB', self.code.CONNECT_REQUEST, self.userid, length_id, length_pwd)
+
+     #       if self.userid == 0 :
+      #              raise ValueError
             
-            completed_request = start_of_request + length_id + length_pwd + username + passwd
+        #    completed_request = start_of_request + length_id + length_pwd + username + passwd
             
-            return connectRequest
+       #     return connectRequest
         
 
-        def connectResponse():
+       # def connectResponse():
 
-            struct.pack('Q',bytes(self.userid))
+       #     struct.pack('Q',bytes(self.userid))
 
-            if self.userid == 0 :
-                    raise ValueError
+      #      if self.userid == 0 :
+       #             raise ValueError
             
-        def userRequest():
-             
-            
+       # def userRequest():
+              
