@@ -182,7 +182,7 @@ class ConnectResponse(Message):
     def encode(self) -> bytes:
         return struct.pack('BQ', self.code, self.userid)
 
-class UserRequest(Message):
+class UsersRequest(Message):
     
     code = Code.USERS_REQUEST
     userid : int
@@ -199,7 +199,7 @@ class UserRequest(Message):
         ...
 
 
-class UserResponse(Message):
+class UsersResponse(Message):
 
     code = Code.USERS_RESPONSE    
 
