@@ -70,7 +70,9 @@ class MessageRequest(Message):
         self.nbrmsg = nbrmsg
     @classmethod
     def decode(cls, data: bytes) -> Message :
-        ...#return struct.unpack('', data)
+        ...
+        #(code, userid, threadid, nbrmsg) = struct.unpack('BQQB', data)
+        #return (code, userid, threadid, nbrmsg)
     
     def encode(self) -> bytes:
         return struct.pack('BQQB', self.code.MESSAGES_REQUEST, self.userid, self.threadid, self.nbrmsg)
@@ -94,15 +96,18 @@ class MessageResponse(Message):
 
     @classmethod    
     def decode(cls, data: bytes) -> Message :
-         ...
+        ...
+         #size = calcsize
+         #(code, userid, ) = unq data[0:size]
     def encode(self) -> bytes :
             msgresponse = struct.pack('BQB', self.code.MESSAGES_RESPONSE, self.userid, self.nbrmsg)
             for i in range (0,self.nbrmsg):
                 header = struct.pack('QQQB', self.messageid, self.pubdate, self.authoruserid, self.lenghtmsg)
                 msgresponse += header
                 i += 1
-            messages = bytes(message)
-            msgresponse +=  bytes(self.message)
+            #messages = bytes(message)
+            #msgresponse +=  messages
+            return msgresponse
 class PostRequest(Message):
 
     threadid : int
@@ -116,9 +121,11 @@ class PostRequest(Message):
 
     @classmethod 
     def decode(cls, data: bytes) -> Message :
-         ...        
+        ...#(code, userid, threadid, lenghtmsg)        
     def encode(self) -> bytes :
-            return struct.pack('BQQB', self.code.POST_REQUEST, self.userid, self.threadid, self.lenghtmsg)
+        ...
+        #request= struct.pack('BQQB', self.code.POST_REQUEST, self.userid, self.threadid, self.lenghtmsg)
+
 
 class PostResponse(Message):
 
@@ -131,6 +138,8 @@ class PostResponse(Message):
 
     @classmethod
     def decode(cls, data: bytes) -> Message :
-         ...         
+        ...
+        #(code, userid, threadid, messageid) = struct.unpack('BQQQ', data)
+        #return  (code, userid, threadid, messageid)   
     def encode(self) -> bytes:
-            return struct.pack('BQQQ', self.code.POST_RESPONSE, self.userid, self.threadid, self.messageid)
+        return struct.pack('BQQQ', self.code.POST_RESPONSE, self.userid, self.threadid, self.messageid)
