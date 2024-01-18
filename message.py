@@ -146,26 +146,36 @@ class PostResponse(Message):
         return struct.pack('BQQQ', self.code.POST_RESPONSE, self.userid, self.threadid, self.messageid)
 
 
+
+
+
 class ConnectRequest(Message):
 
     code = Code.CONNECT_REQUEST
-    username : bytes
-    passwd : bytes
+    userid : int
     length_id : bytes
     length_pwd : bytes
+    username : bytes
+    passwd : bytes
 
-    def __init__(self, username : bytes, passwd : bytes):
-         self.username = username
-         self.passwd = passwd
+    def __init__(self, userid : int, length_id : bytes, length_pwd : bytes, username : bytes, passwd : bytes,):
+         self.userid = userid
          self.length_id = bytes(len(username))
          self.length_pwd = bytes(len(passwd))
+         self.username = username
+         self.passwd = passwd
+         
 
     @classmethod
     def decode(cls, data: bytes) -> Message:
-        ...
+        (_, userid, length_id, length_pwd, username, passwd) = struct.unpack('BQBBBB', data)
+        return ConnectRequest(userid, length_id, length_pwd, username, passwd)
 
     def encode(self) -> bytes:
-        return struct.pack('BQBB', self.code, self.username, self.passwd, self.length_id, self.length_pwd)
+        return struct.pack('BQBBBB', self.code, self.userid, self.length_id, self.length_pwd, self.username, self.passwd)
+
+
+
 
 class ConnectResponse(Message):
     
@@ -177,57 +187,61 @@ class ConnectResponse(Message):
 
     @classmethod
     def decode(cls, data: bytes) -> Message:
-        ...
+        (_, userid) = struct.unpack('BQ', data)
+        return ConnectResponse(userid)
 
     def encode(self) -> bytes:
         return struct.pack('BQ', self.code, self.userid)
+
+
+
+
 
 class UsersRequest(Message):
     
     code = Code.USERS_REQUEST
     userid : int
-    nbr_request : int
+    nbr_user_request : bytes
+    nbr_userid : bytes
 
-    def __init__(self, userid : int, ):
-
+    def __init__(self, userid : int, nbr_user_request : bytes, nbr_userid : bytes):
+        self.userid = userid
+        self.nbr_user_request = nbr_user_request
+        "self.nbr_userid = nbr_userid*nbr_user_request" #CORRECTION
 
     @classmethod
     def decode(cls, data: bytes) -> Message:
-        ...
+        (_, userid, nbr_user_request, "nbr_userid, nbr_userid") = struct.unpack('BQBQQ', data) #CORRECTION
+        return UsersRequest(userid, nbr_user_request, "nbr_userid")
 
     def encode(self) -> bytes:
-        ...
+        return struct.pack('BQBQQ', self.code, self.userid, self.nbr_user_request, "self.nbr_userid, self.nbr_userid") #CORRECTION
+
+
 
 
 class UsersResponse(Message):
 
     code = Code.USERS_RESPONSE    
+    userid : int
+    nbr_user_request : bytes
+    length_id : bytes
+    username : bytes
+    nbr_userid : bytes
 
-    def __init__(self,):
-         ...
+    def __init__(self, username : bytes, length_id : bytes, userid : int, nbr_user_request : bytes, nbr_userid : bytes):
+        self.username = username
+        self.length_id = bytes(len(username))
+        self.userid = userid
+        self.nbr_user_request = nbr_user_request
+        "self.nbr_userid = nbr_userid* nbr_user_request" #CORRECTION
+
     @classmethod
     def decode(cls, data: bytes) -> Message:
-        ...
+        (_, userid, nbr_user_request, "nbr_userid", length_id, username) = struct.unpack('BQBQBQBB', data) #CORRECTION
+        return UsersResponse(userid, nbr_user_request, "nbr_userid", length_id, username)
 
     def encode(self) -> bytes:
-        ...
-  
-    #start_of_request = struct.pack('BQBB', self.code.CONNECT_REQUEST, self.userid, length_id, length_pwd)
+        return struct.pack('BQBQBQBB', self.code, self.userid, self.nbr_user_request, "self.nbr_userid", self.length_id, self.username) #CORRECTION
 
-     #       if self.userid == 0 :
-      #              raise ValueError
-            
-        #    completed_request = start_of_request + length_id + length_pwd + username + passwd
-            
-       #     return connectRequest
-        
 
-       # def connectResponse():
-
-       #     struct.pack('Q',bytes(self.userid))
-
-      #      if self.userid == 0 :
-       #             raise ValueError
-            
-       # def userRequest():
-              
