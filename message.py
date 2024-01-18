@@ -178,7 +178,7 @@ class ConnectResponse(Message):
     def encode(self) -> bytes:
         ...
 
-class UserRequest(Message):
+class UsersRequest(Message):
     
 
     def __init__(self):
@@ -191,7 +191,7 @@ class UserRequest(Message):
         ...
 
 
-class UserResponse(Message):
+class UsersResponse(Message):
     
 
     def __init__(self,):
