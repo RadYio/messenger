@@ -85,38 +85,34 @@ class MessageResponse(Message):
 
     code = Code.MESSAGES_RESPONSE
     nbrmsg : int
-    messageid : int
-    pubdate : datetime
-    authoruserid : int
-    lenghtmsg : int
+    message_header : list[tuple[int, datetime, int, int]]
     message : str
 
-    def __init__(self, userid : int, nbrmsg : int, messageid : int, pubdate : datetime, authoruserid : int, lenghtmsg : int, message : str):
+    def __init__(self, userid : int, nbrmsg : int, message_header : list[tuple[int, datetime, int, int]], message : str):
 
         self.userid = userid
         self.nbrmsg = nbrmsg
-        self.messageid = messageid
-        self.pubdate = pubdate
-        self.authoruserid = authoruserid
-        self.lenghtmsg = lenghtmsg
+        self.message_header = message_header
         self.message = message
 
     @classmethod    
     def decode(cls, data: bytes) -> Message :
+        message_header : list[tuple[int, datetime, int, int]] = list()
         size_start = struct.calcsize('BQB')
         (_, userid, nbrmsg) = struct.unpack('BQB', data[0:size_start])
         size_header = struct.calcsize('QQQH')
-        for _i in range (0, nbrmsg):
-            (messageid, pubdate, authoruserid, lenghtmsg) = struct.unpack('QQQH', data[size_start:size_header])
+        for i in range (0, nbrmsg):
+            (messageid, datepub, userauthorid, lenghtmsg) = struct.unpack('QQQH', data[size_start:size_header])
+            message_header[i] = (messageid, datepub, userauthorid, lenghtmsg)
             size_start = size_header
             size_header += size_header 
         message = data[size_header:].decode()
-        return MessageResponse(userid, nbrmsg, messageid, pubdate, authoruserid, lenghtmsg, message)
+        return MessageResponse(userid, nbrmsg, message_header, message)
 
     def encode(self) -> bytes :
             msgresponse = struct.pack('BQB', self.code, self.userid, self.nbrmsg)
-            for _i in range (0,self.nbrmsg):
-                header = struct.pack('QQQH', self.messageid, self.pubdate, self.authoruserid, self.lenghtmsg)
+            for i in range (0,self.nbrmsg):
+                header = struct.pack('QQQH', self.message_header[i])
                 msgresponse += header
             byte_message = self.message.encode()
             msgresponse += byte_message
