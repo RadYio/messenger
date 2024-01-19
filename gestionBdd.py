@@ -5,6 +5,8 @@ import hmac
 import os.path
 import threading as th # Pour les threads (et les verrous)
 
+NAME_OF_BDD_FILE = "bdd.pickle"
+
 def hash512(password : str) -> str:
     h = hashlib.new('sha512')
     h.update(password.encode())
@@ -16,28 +18,21 @@ class Bdd():
     
     list_of_users : list[tuple[int, str, str]]
     list_of_messages : list[int]
-    user_lock : th.Lock
+    lock : th.Lock
 
     def __init__(self):
         self.list_of_users = []
         self.list_of_messages = []
-        self.user_lock = th.Lock()
+        self.lock = th.Lock() 
 
-    def __reduce__(self):
-        # Exclude the lock from pickling
-        return (self.__class__, (self.list_of_users, self.list_of_messages))
+    def __getstate__(self):
+        state = self.__dict__.copy()
+        del state['lock']  # Exclude the lock from pickling, it can't be pickled
+        return state
 
-
-    def save_bdd_on_disk(self, secret_key: bytes = b'password') -> bytes:
-        with self.user_lock:
-            data = pickle.dumps(self)
-            signature = hmac.new(secret_key, data, hashlib.sha512).digest()
-            with open('bdd.pickle', 'wb') as f:
-                f.write(signature)
-                f.write(data)
-
-            
-            return signature
+    def __setstate__(self, state : dict[str, list[tuple[int, str, str]]]):
+        self.__dict__.update(state)
+        self.lock = th.Lock()  # Recreate the lock when unpickling
 
     @staticmethod
     def load_bdd_from_disk(secret_key: bytes = b'password') -> "Bdd":
@@ -54,11 +49,14 @@ class Bdd():
             ValueError: If the signature is invalid.
                 
         """
-        if not os.path.isfile('bdd.pickle'):
+
+        # Check if the file exists and create a new database from scratch if not
+        if not os.path.isfile(NAME_OF_BDD_FILE):
             print("Bdd created from scratch")
             return Bdd()
 
-        with open('bdd.pickle', 'rb') as f:
+        # Load the database from the disk and check the signature to avoid tampering héhé
+        with open(NAME_OF_BDD_FILE, 'rb') as f:
             signature = f.read(64)
             data = f.read()
         if not hmac.compare_digest(signature, hmac.new(secret_key, data, hashlib.sha512).digest()):
@@ -66,9 +64,34 @@ class Bdd():
         
         return pickle.loads(data)
     
+
+    def save_bdd_on_disk(self, secret_key: bytes = b'password') -> bytes:
+        with self.lock:
+            data = pickle.dumps(self)
+            signature = hmac.new(secret_key, data, hashlib.sha512).digest()
+            with open(NAME_OF_BDD_FILE, 'wb') as f:
+                f.write(signature)
+                f.write(data)
+            return signature
+
+    
+    def username_exists(self, username : str) -> bool:
+        """Check if the username is already used. ⚠️⚠️We are not using the lock here⚠️⚠️
+
+        Args:
+            username (str): username to check.
+
+        Returns:
+            bool: True if the username is already used, False otherwise.
+        """
+        
+        for user in self.list_of_users:
+            if user[1] == username:
+                return True
+        return False
     
     def add_user(self, username : str, password : str) -> int:
-        """Add a user to the database. 
+        """Add a user to the database. ⚠️⚠️We are using the lock here⚠️⚠️
 
         Args:
             username (str): username of the user.
@@ -77,13 +100,16 @@ class Bdd():
         Returns:
             int: id of the user added.
         """
-        with self.user_lock:
+        with self.lock:
+            if self.username_exists(username):
+                raise ValueError("Username already exists")
+            
             id = len(self.list_of_users) + 1
             self.list_of_users.append((id, username, hash512(password)))
             return id
     
     def check_connexion(self, username : str, password : str) -> int:
-        """Check if the username and password are correct.
+        """Check if the username and password are correct. ⚠️⚠️We are using the lock here⚠️⚠️
 
         Args:
             username (str): username of the user.
@@ -93,7 +119,7 @@ class Bdd():
             int: id of the user if the username and password are correct, -1 otherwise. 
             (We could also raise an exception)
         """
-        with self.user_lock:
+        with self.lock:
             for user in self.list_of_users:
                 if user[1] == username and user[2] == hash512(password):
                     return user[0]
@@ -104,7 +130,7 @@ class Bdd():
 labdd : Bdd = Bdd.load_bdd_from_disk()
 
 # try with so many threads that some of them are killed by the OS before they can finish
-for i in range(300):
+for i in range(10000):
     th.Thread(target=labdd.add_user, args=(f"User{i}", f"Password{i}")).start()
 
 labdd.save_bdd_on_disk()
