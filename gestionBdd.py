@@ -1,4 +1,4 @@
-
+from __future__ import annotations
 import hashlib
 import pickle
 import hmac
@@ -41,7 +41,7 @@ class Bdd():
         self.lock_message = th.Lock() # Recreate the lock_user when unpickling
 
     @staticmethod
-    def load_bdd_from_disk(secret_key: bytes = b'password') -> "Bdd":
+    def load_bdd_from_disk(secret_key: bytes = b'password') -> Bdd:
         """Load the database from the disk. The database is signed with HMAC-SHA512.
             Also check if the file exists. If not, create a new database from scratch.
         
