@@ -167,7 +167,7 @@ class ConnectRequest(Message):
          
 
     @classmethod
-    def decode(cls, data: bytes) -> Message:
+    def decode(cls, data: bytes) -> ConnectRequest :
         (_, userid, length_id, length_pwd, username, passwd) = struct.unpack('BQBBBB', data)
         return ConnectRequest(userid, length_id, length_pwd, username, passwd)
 
@@ -186,7 +186,7 @@ class ConnectResponse(Message):
         self.userid = userid
 
     @classmethod
-    def decode(cls, data: bytes) -> Message:
+    def decode(cls, data: bytes) -> ConnectResponse :
         (_, userid) = struct.unpack('BQ', data)
         return ConnectResponse(userid)
 
@@ -210,7 +210,7 @@ class UsersRequest(Message):
         self.list_userid = list_userid
 
     @classmethod
-    def decode(cls, data: bytes) -> Message:
+    def decode(cls, data: bytes) -> UsersRequest :
 
         first_unpack = struct.calcsize('BQB')
         (_, userid, nbr_user_request) = struct.unpack('BQB', data[:first_unpack])
@@ -255,7 +255,7 @@ class UsersResponse(Message):
 
 
     @classmethod
-    def decode(cls, data: bytes) -> Message:
+    def decode(cls, data: bytes) -> UsersResponse :
 
         first_unpack = struct.calcsize('BQB')
         (_, userid, nbr_user_request) = struct.unpack('BQB', data[:first_unpack])
@@ -294,31 +294,3 @@ class UsersResponse(Message):
         return request
     
 
-"""
-        first_unpack = struct.calcsize('BQB')
-        (_, userid, nbr_user_request) = struct.unpack('BQB', data[:first_unpack])
-        size_of_user = struct.calcsize('Q')
-
-        list_of_users_id : list[int] = list()
-
-        for _ in range(nbr_user_request): 
-            (temp,_) = struct.unpack('Q', data[first_unpack:first_unpack + size_of_user])
-        
-            first_unpack += size_of_user
-            list_of_users_id.append(temp)
-            
-
-        (_, userid, nbr_user_request, "nbr_userid", ) = struct.unpack('BQBQBQBB', data) #CORRECTION
-        return UsersResponse(userid, nbr_user_request, "nbr_userid", length_id, username)
-
-    def encode(self) -> bytes:
-        #return struct.pack('BQBQBQBB', self.code, self.userid, self.nbr_user_request, "self.nbr_userid", self.length_id, self.username) #CORRECTION
-        
-        request = struct.pack('BQB', self.code, self.userid, self.nbr_user_request)
-
-        for element in self.list_userid:
-            request  += struct.pack('Q', element)
-
-        return request
-
-"""
