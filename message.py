@@ -130,6 +130,7 @@ class PostRequest(Message):
         self.threadid = threadid
         self.lenghtmsg = lenghtmsg
         self.message = message
+        #
 
     @classmethod 
     def decode(cls, data: bytes) -> PostRequest :
