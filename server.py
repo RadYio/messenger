@@ -14,6 +14,9 @@ the_bdd : Bdd = Bdd.load_bdd_from_disk() # Global variable
 def smart_handler(conn: Connection):
     # A smart echo handler
     thread = current_thread()
+
+    user_id_of_the_session : int = -1
+
     with conn:
         try:
             while True:
@@ -44,16 +47,27 @@ def smart_handler(conn: Connection):
                         logging.info(f'{thread.name} fileno {conn.fileno()}: CONNECT_REQUEST')
                         message = ConnectRequest.decode(data)
                         if the_bdd.username_exists(message.username):
-                            message2 = ConnectResponse(the_bdd.check_connexion(message.username, message.passwd)) 
+                            user_id_of_the_session = the_bdd.check_connexion(message.username, message.passwd)
                         else:
-                            message2 = ConnectResponse(the_bdd.add_user(message.username, message.passwd)) 
+                            user_id_of_the_session = the_bdd.add_user(message.username, message.passwd)
 
+                        message2 = ConnectResponse(user_id_of_the_session) 
                         conn.send(message2.encode())
 
                     case Code.POST_REQUEST:
                         logging.info(f'{thread.name} fileno {conn.fileno()}: POST_REQUEST')
                         message = PostRequest.decode(data)
 
+                        #Check if the userid provided is the same as the one in the session
+                        if user_id_of_the_session == message.userid:
+                            id_message : int = the_bdd.add_new_message(datetime.now(), message.userid, message.message)
+
+                            # A Corriger on pourrait mettre le threadid à 0 en default et verifier le renvoie de l'user id
+                            message2 = PostResponse(message.userid, 0, id_message)
+                        else:
+                            message2 = PostResponse(message.userid, 0, -1)
+                        
+                        conn.send(message2.encode())
 
 
 
