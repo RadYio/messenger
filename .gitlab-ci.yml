@@ -28,13 +28,13 @@ install-job:       # This job runs in the install stage
     - ls
   only: 
     - main
-
-run-job:       # This job runs in the run stage
-  stage: run
-  tags:
-      - run_job
-  script:
-    - python3 server.py --keyfile key.pem --certfile cert.pem 127.0.0.1 5556
-  only: 
-    - main
+#
+#run-job:       # This job runs in the run stage
+#  stage: run
+#  tags:
+#      - run_job
+#  script:
+#    - python3 server.py --keyfile key.pem --certfile cert.pem 127.0.0.1 5556
+#  only: 
+#    - main
 
