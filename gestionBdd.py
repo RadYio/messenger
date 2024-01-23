@@ -21,20 +21,24 @@ class Bdd():
     list_of_users : list[tuple[int, str, str]]
     list_of_messages : list[tuple[int, datetime, int, str]]
     lock_user : th.Lock
+    lock_message : th.Lock
 
     def __init__(self):
         self.list_of_users = []
         self.list_of_messages = []
         self.lock_user = th.Lock() 
+        self.lock_message = th.Lock() 
 
     def __getstate__(self):
         state = self.__dict__.copy()
         del state['lock_user']  # Exclude the lock_user from pickling, it can't be pickled
+        del state['lock_message']  # Exclude the lock_message from pickling
         return state
 
     def __setstate__(self, state : dict[str, list[tuple[int, str, str]]]):
         self.__dict__.update(state)
         self.lock_user = th.Lock()  # Recreate the lock_user when unpickling
+        self.lock_message = th.Lock() # Recreate the lock_user when unpickling
 
     @staticmethod
     def load_bdd_from_disk(secret_key: bytes = b'password') -> "Bdd":
@@ -129,18 +133,36 @@ class Bdd():
         
     def add_new_message(self, datetime_of_message : datetime, author_id: int, text_message: str):
         ...
+        with self.lock_message:
+            id_of_message : int = len(self.list_of_messages) + 1
+
+            # Construct a new tuple before adding. We should do -- self.list_of_messages.append((id_of_message, datetime_of_message, author_id, text_message))
+            new_tuple : tuple[int, datetime, int, str] = (id_of_message, datetime_of_message, author_id, text_message)
+            self.list_of_messages.append(new_tuple)
+
 
     def get_x_message(self, nb_of_message_request : int = 20) -> list[tuple[int, datetime, int, str]]:
         ...
+        with self.lock_message:
+            nb_message_in_list : int = len(self.list_of_messages)
+            nb_message : int = nb_message_in_list if nb_of_message_request > nb_message_in_list else nb_of_message_request
+            return self.list_of_messages[nb_message_in_list - nb_message:]
+        
 
     
 
 
-    
+
 labdd : Bdd = Bdd.load_bdd_from_disk()
 
 # try with so many threads that some of them are killed by the OS before they can finish
 for i in range(10000):
     th.Thread(target=labdd.add_user, args=(f"Userr{i}", f"Password{i}")).start()
 
+
+labdd.add_new_message(datetime.now(), 10, 'yoo')
+labdd.add_new_message(datetime.now(), 10, 'yooddd')
+labdd.add_new_message(datetime.now(), 10, 'yoodddegrherh')
+
+print(labdd.get_x_message())
 labdd.save_bdd_on_disk()
