@@ -131,7 +131,7 @@ class Bdd():
                     return user[0]
             return -1
         
-    def add_new_message(self, datetime_of_message : datetime, author_id: int, text_message: str):
+    def add_new_message(self, datetime_of_message : datetime, author_id: int, text_message: str) -> int:
         ...
         with self.lock_message:
             id_of_message : int = len(self.list_of_messages) + 1
@@ -139,6 +139,7 @@ class Bdd():
             # Construct a new tuple before adding. We should do -- self.list_of_messages.append((id_of_message, datetime_of_message, author_id, text_message))
             new_tuple : tuple[int, datetime, int, str] = (id_of_message, datetime_of_message, author_id, text_message)
             self.list_of_messages.append(new_tuple)
+            return id_of_message
 
 
     def get_x_message(self, nb_of_message_request : int = 20) -> list[tuple[int, datetime, int, str]]:
