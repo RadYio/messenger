@@ -74,7 +74,7 @@ class MessageRequest(Message):
         self.nbrmsg = nbrmsg
 
     @classmethod
-    def decode(cls, data: bytes) -> Message :
+    def decode(cls, data: bytes) -> MessageRequest :
         (_, userid, threadid, nbrmsg) = struct.unpack('BQQB', data)
         return MessageRequest(userid, threadid, nbrmsg)
           
@@ -96,7 +96,7 @@ class MessageResponse(Message):
         self.message = message
 
     @classmethod    
-    def decode(cls, data: bytes) -> Message :
+    def decode(cls, data: bytes) -> MessageResponse :
         message_header : list[tuple[int, datetime, int, int]] = list()
         size_start = struct.calcsize('BQB')
         (_, userid, nbrmsg) = struct.unpack('BQB', data[0:size_start])
@@ -132,7 +132,7 @@ class PostRequest(Message):
         self.message = message
 
     @classmethod 
-    def decode(cls, data: bytes) -> Message :
+    def decode(cls, data: bytes) -> PostRequest :
         size_header = struct.calcsize('BQQH')
         (_, userid, threadid, lenghtmsg) = struct.unpack('BQQH', data[0:size_header])
         message = data[size_header:].decode()
@@ -158,7 +158,7 @@ class PostResponse(Message):
         self.messageid = messageid
 
     @classmethod
-    def decode(cls, data: bytes) -> Message :
+    def decode(cls, data: bytes) -> PostResponse :
         (_, userid, threadid, messageid) = struct.unpack('BQQQ', data)
         return PostResponse(userid, threadid, messageid)   
     def encode(self) -> bytes:
