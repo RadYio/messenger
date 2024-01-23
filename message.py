@@ -163,26 +163,33 @@ class ConnectRequest(Message):
 
     code = Code.CONNECT_REQUEST
     userid : int
-    length_id : bytes
-    length_pwd : bytes
-    username : bytes
-    passwd : bytes
+    username : str
+    passwd : str
 
-    def __init__(self, userid : int, length_id : bytes, length_pwd : bytes, username : bytes, passwd : bytes,):
+    def __init__(self, userid : int, username : str, passwd : str,):
          self.userid = userid
-         self.length_id = bytes(len(username))
-         self.length_pwd = bytes(len(passwd))
          self.username = username
          self.passwd = passwd
          
 
     @classmethod
     def decode(cls, data: bytes) -> ConnectRequest :
-        (_, userid, length_id, length_pwd, username, passwd) = struct.unpack('BQBBBB', data)
-        return ConnectRequest(userid, length_id, length_pwd, username, passwd)
+        size_of_header : int = struct.calcsize('BQBB')
+        (_, userid, length_username, length_pwd) = struct.unpack('BQBB', data)
+
+        # On se place à la fin de l'entête pour récupérer les données puis on se deplace de la taille de l'username pour recuperer l'username en bytes
+        username= data[size_of_header:size_of_header+length_username].decode()
+
+        # On se place à la fin de l'en-tête et de l'username, puis on se deplace de la taille du password pour recuperer le password en bytes
+        passwd = data[size_of_header+length_username:size_of_header+length_username+length_pwd].decode()
+        return ConnectRequest(userid, username, passwd)
 
     def encode(self) -> bytes:
-        return struct.pack('BQBBBB', self.code, self.userid, self.length_id, self.length_pwd, self.username, self.passwd)
+        start_of_header = struct.pack('BQBB', self.code, self.userid, len(self.username), len(self.passwd))
+        
+        username = self.username.encode()
+        passwd = self.passwd.encode()
+        return start_of_header + username + passwd
 
 
 
