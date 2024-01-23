@@ -1,9 +1,64 @@
 import logging
 
+from message import *
+from gestionBdd import *
+
 from argparse import ArgumentParser
 from threading import current_thread, Thread
 from connection import Connection, Server
 
+from gestionBdd import *
+
+the_bdd : Bdd = Bdd.load_bdd_from_disk() # Global variable
+
+def smart_handler(conn: Connection):
+    # A smart echo handler
+    thread = current_thread()
+    with conn:
+        try:
+            while True:
+                # Receive some data from a connection
+                data = conn.recv()
+                logging.debug(f'{thread.name} fileno {conn.fileno()}: {repr(data)}')
+                
+                match Code.decode(data):
+                    case Code.MESSAGES_REQUEST:
+                        logging.info(f'{thread.name} fileno {conn.fileno()}: MESSAGES_REQUEST')
+
+                        message : MessageRequest = MessageRequest.decode(data)
+                        all_messages : list[tuple[int, datetime, int, str]] = the_bdd.get_x_message(message.nbrmsg)
+                        message_header : list[tuple[int, datetime, int, int]] = list()
+                        # Pour tous tous les messages, on ajoute le header
+                        for msg in all_messages:
+                            message_header.append((msg[0], msg[1], msg[2], len(msg[3])))
+                        message2 : MessageResponse = MessageResponse(message.userid, message.nbrmsg, message_header, all_messages[0][3])
+
+                        # Envoie de la réponse
+                        conn.send(message2.encode())
+                    case Code.USERS_REQUEST:
+                        logging.info(f'{thread.name} fileno {conn.fileno()}: USER_REQUEST')
+                        ...
+                        message : UsersRequest = UsersRequest.decode(data)
+                    case Code.CONNECT_REQUEST:
+                        logging.info(f'{thread.name} fileno {conn.fileno()}: CONNECT_REQUEST')
+                        ...
+                        message : ConnectRequest = ConnectRequest.decode(data)
+                    case Code.POST_REQUEST:
+                        logging.info(f'{thread.name} fileno {conn.fileno()}: POST_REQUEST')
+                        message : PostRequest = PostRequest.decode(data)
+
+
+
+
+                    case _:
+                        logging.info(f'{thread.name} fileno {conn.fileno()}: UNKNOWN')
+                        ...
+                        conn.send(data)
+
+        except BrokenPipeError:
+            logging.info(f'{thread.name} fileno {conn.fileno()} closed the connection')
+        except Exception as exn:
+            logging.error(f'{thread.name}: {repr(exn)}')
 
 def dummy_handler(conn: Connection):
     # A dummy echo handler
@@ -29,7 +84,7 @@ def serve(address: tuple[str, int], certfile: str, keyfile: str | None = None):
                 conn = listener.accept()
                 logging.info(f'Connection accepted from {listener.last_accepted()} on fileno {conn.fileno()}')
                 # Start a new thread handling the connection
-                thread = Thread(target=dummy_handler, args=(conn,), daemon=True)
+                thread = Thread(target=smart_handler, args=(conn,), daemon=True)
                 thread.start()
                 logging.info(f'{thread.name} started with fileno {conn.fileno()}')
             except Exception as exn:
