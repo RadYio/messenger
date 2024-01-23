@@ -25,27 +25,34 @@ def smart_handler(conn: Connection):
                     case Code.MESSAGES_REQUEST:
                         logging.info(f'{thread.name} fileno {conn.fileno()}: MESSAGES_REQUEST')
 
-                        message : MessageRequest = MessageRequest.decode(data)
+                        message = MessageRequest.decode(data)
                         all_messages : list[tuple[int, datetime, int, str]] = the_bdd.get_x_message(message.nbrmsg)
                         message_header : list[tuple[int, datetime, int, int]] = list()
                         # Pour tous tous les messages, on ajoute le header
                         for msg in all_messages:
                             message_header.append((msg[0], msg[1], msg[2], len(msg[3])))
-                        message2 : MessageResponse = MessageResponse(message.userid, message.nbrmsg, message_header, all_messages[0][3])
+                        message2 = MessageResponse(message.userid, message.nbrmsg, message_header, all_messages[0][3])
 
                         # Envoie de la réponse
                         conn.send(message2.encode())
                     case Code.USERS_REQUEST:
                         logging.info(f'{thread.name} fileno {conn.fileno()}: USER_REQUEST')
                         ...
-                        message : UsersRequest = UsersRequest.decode(data)
+                        message  = UsersRequest.decode(data)
+
                     case Code.CONNECT_REQUEST:
                         logging.info(f'{thread.name} fileno {conn.fileno()}: CONNECT_REQUEST')
-                        ...
-                        message : ConnectRequest = ConnectRequest.decode(data)
+                        message = ConnectRequest.decode(data)
+                        if the_bdd.username_exists(message.username):
+                            message2 = ConnectResponse(the_bdd.check_connexion(message.username, message.passwd)) 
+                        else:
+                            message2 = ConnectResponse(the_bdd.add_user(message.username, message.passwd)) 
+
+                        conn.send(message2.encode())
+
                     case Code.POST_REQUEST:
                         logging.info(f'{thread.name} fileno {conn.fileno()}: POST_REQUEST')
-                        message : PostRequest = PostRequest.decode(data)
+                        message = PostRequest.decode(data)
 
 
 
