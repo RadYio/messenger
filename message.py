@@ -63,36 +63,35 @@ class Message(Protocol):
 
 class MessageRequest(Message):
 
-    code = Code.MESSAGES_REQUEST
     threadid : int
     nbrmsg : int
 
-    def __init__(self, userid : int, threadid : int, nbrmsg : int):
-
-        self.userid = userid
+    def __init__(self, threadid : int, nbrmsg : int):
         self.threadid = threadid
         self.nbrmsg = nbrmsg
-
     @classmethod
     def decode(cls, data: bytes) -> MessageRequest :
         (_, userid, threadid, nbrmsg) = struct.unpack('BQQB', data)
         return MessageRequest(userid, threadid, nbrmsg)
           
     def encode(self) -> bytes:
-        return struct.pack('BQQB', self.code, self.userid, self.threadid, self.nbrmsg)
+        return struct.pack('BQQB', self.code.MESSAGES_REQUEST, self.userid, self.threadid, self.nbrmsg)
 
 class MessageResponse(Message):
 
-    code = Code.MESSAGES_RESPONSE
     nbrmsg : int
-    message_header : list[tuple[int, datetime, int, int]]
+    messageid : int
+    pubdate : datetime
+    authoruserid : int
+    lenghtmsg : int
     message : str
 
-    def __init__(self, userid : int, nbrmsg : int, message_header : list[tuple[int, datetime, int, int]], message : str):
-
-        self.userid = userid
+    def __init__(self, nbrmsg : int, messageid : int, pubdate : datetime, authoruserid : int, lenghtmsg : int, message : str):
         self.nbrmsg = nbrmsg
-        self.message_header = message_header
+        self.messageid = messageid
+        self.pubdate = pubdate
+        self.authoruserid = authoruserid
+        self.lenghtmsg = lenghtmsg
         self.message = message
 
     @classmethod    
@@ -110,23 +109,21 @@ class MessageResponse(Message):
         return MessageResponse(userid, nbrmsg, message_header, message)
 
     def encode(self) -> bytes :
-            msgresponse = struct.pack('BQB', self.code, self.userid, self.nbrmsg)
+            msgresponse = struct.pack('BQB', self.code.MESSAGES_RESPONSE, self.userid, self.nbrmsg)
             for i in range (0,self.nbrmsg):
-                header = struct.pack('QQQH', self.message_header[i])
+                header = struct.pack('QQQB', self.messageid, self.pubdate, self.authoruserid, self.lenghtmsg)
                 msgresponse += header
-            byte_message = self.message.encode()
-            msgresponse += byte_message
+                i += 1
+            #messages = bytes(message)
+            #msgresponse +=  messages
             return msgresponse
-    
 class PostRequest(Message):
 
-    code = Code.POST_REQUEST
     threadid : int
     lenghtmsg : int
     message : str
 
-    def __init__(self, userid : int, threadid : int, lenghtmsg : int, message : str):
-        self.userid = userid
+    def __init__(self, threadid : int, lenghtmsg : int, message : str):
         self.threadid = threadid
         self.lenghtmsg = lenghtmsg
         self.message = message
@@ -138,22 +135,16 @@ class PostRequest(Message):
         message = data[size_header:].decode()
         return PostRequest(userid, threadid, lenghtmsg, message)       
     def encode(self) -> bytes :
-        request = struct.pack('BQQH', self.code, self.userid, self.threadid, self.lenghtmsg)
-        byte_message = self.message.encode()
-        request += byte_message
-        return request
-
+        ...
+        #request= struct.pack('BQQB', self.code.POST_REQUEST, self.userid, self.threadid, self.lenghtmsg)
 
 
 class PostResponse(Message):
 
-    code = Code.POST_RESPONSE
     threadid : int
     messageid : int
 
-    def __init__(self, userid : int, threadid : int, messageid : int):
-
-        self.userid = userid 
+    def __init__(self, threadid : int, messageid : int):
         self.threadid = threadid
         self.messageid = messageid
 
@@ -162,88 +153,154 @@ class PostResponse(Message):
         (_, userid, threadid, messageid) = struct.unpack('BQQQ', data)
         return PostResponse(userid, threadid, messageid)   
     def encode(self) -> bytes:
-        return struct.pack('BQQQ', self.code, self.userid, self.threadid, self.messageid)
+        return struct.pack('BQQQ', self.code.POST_RESPONSE, self.userid, self.threadid, self.messageid)
+
+
+
 
 
 class ConnectRequest(Message):
 
-    username : int
-    passwd : int
-    #length_id : bytes = bytes(len(username))
-    #length_pwd : bytes = bytes(len(passwd))
+    code = Code.CONNECT_REQUEST
+    userid : int
+    length_id : bytes
+    length_pwd : bytes
+    username : bytes
+    passwd : bytes
 
-    def __init__(self, username : bytes, passwd : bytes, length_id : bytes, length_pwd : bytes):
-         """self.username = username
+    def __init__(self, userid : int, length_id : bytes, length_pwd : bytes, username : bytes, passwd : bytes,):
+         self.userid = userid
+         self.length_id = bytes(len(username))
+         self.length_pwd = bytes(len(passwd))
+         self.username = username
          self.passwd = passwd
-         self.length_id = length_id
-         self.passwd = passwd"""
+         
 
     @classmethod
-    def decode(cls, data: bytes) -> Message:
-        raise ValueError
+    def decode(cls, data: bytes) -> ConnectRequest :
+        (_, userid, length_id, length_pwd, username, passwd) = struct.unpack('BQBBBB', data)
+        return ConnectRequest(userid, length_id, length_pwd, username, passwd)
 
     def encode(self) -> bytes:
-        raise ValueError
+        return struct.pack('BQBBBB', self.code, self.userid, self.length_id, self.length_pwd, self.username, self.passwd)
+
+
+
 
 class ConnectResponse(Message):
     
+    code = Code.CONNECT_RESPONSE
+    userid : int
 
-    def __init__(self):
-         ...
+    def __init__(self, userid : int):
+        self.userid = userid
+
     @classmethod
-    def decode(cls, data: bytes) -> Message:
-        ...
+    def decode(cls, data: bytes) -> ConnectResponse :
+        (_, userid) = struct.unpack('BQ', data)
+        return ConnectResponse(userid)
 
     def encode(self) -> bytes:
-        ...
+        return struct.pack('BQ', self.code, self.userid)
+
+
+
+
 
 class UsersRequest(Message):
     
+    code = Code.USERS_REQUEST
+    userid : int
+    nbr_user_request : bytes
+    list_userid : list[int]
 
-    def __init__(self):
-         ...
+    def __init__(self, userid : int, nbr_user_request : bytes, list_userid : list[int]):
+        self.userid = userid
+        self.nbr_user_request = nbr_user_request
+        self.list_userid = list_userid
+
     @classmethod
-    def decode(cls, data: bytes) -> Message:
-        ...
+    def decode(cls, data: bytes) -> UsersRequest :
+
+        first_unpack = struct.calcsize('BQB')
+        (_, userid, nbr_user_request) = struct.unpack('BQB', data[:first_unpack])
+        size_of_user = struct.calcsize('Q')
+
+
+        list_of_users_id : list[int] = list()
+
+        for _ in range(nbr_user_request): 
+            (temp,_) = struct.unpack('Q', data[first_unpack:first_unpack + size_of_user])
+            
+            first_unpack += size_of_user
+            list_of_users_id.append(temp)
+
+        return UsersRequest(userid, nbr_user_request, list_of_users_id)
 
     def encode(self) -> bytes:
-        ...
+        request = struct.pack('BQB', self.code, self.userid, self.nbr_user_request)
+
+        for element in self.list_userid:
+            request  += struct.pack('Q', element)
+
+        return request
+
+
 
 
 class UsersResponse(Message):
+
+    code = Code.USERS_RESPONSE    
+    userid : int
+    nbr_user_request : bytes
+    list_userid : list[int]
+    list_of_users : list[tuple[int, str]]
     
 
-    def __init__(self,):
-         ...
+    def __init__(self, userid : int, nbr_user_request : bytes, list_userid : list[int], list_of_users : list[tuple[int, str]]):
+        self.userid = userid
+        self.nbr_user_request = nbr_user_request
+        self.list_userid = list_userid
+        self.list_of_users = list_of_users
+
+
     @classmethod
-    def decode(cls, data: bytes) -> Message:
-        ...
+    def decode(cls, data: bytes) -> UsersResponse :
+
+        first_unpack = struct.calcsize('BQB')
+        (_, userid, nbr_user_request) = struct.unpack('BQB', data[:first_unpack])
+
+        size_of_user = struct.calcsize('Q')
+        list_of_users_id : list[int] = []
+
+        for _ in range(nbr_user_request):
+            (temp,) = struct.unpack('Q', data[first_unpack:first_unpack + size_of_user])
+            first_unpack += size_of_user
+            list_of_users_id.append(temp)
+
+        size_of_username = struct.calcsize('B')
+        list_of_users : list[tuple[int, str]] = []
+
+        for _ in range(nbr_user_request):
+            user_id, username_length = struct.unpack('QB', data[first_unpack:first_unpack + size_of_username])
+            first_unpack += size_of_username
+            username = data[first_unpack:first_unpack + username_length].decode()
+            first_unpack += username_length
+            list_of_users.append((user_id, username))
+
+        return UsersResponse(userid, nbr_user_request, list_of_users_id, list_of_users)
 
     def encode(self) -> bytes:
-        ...
+        request = struct.pack('BQB', self.code, self.userid, self.nbr_user_request)
 
+        for user_id in self.list_userid:
+            request += struct.pack('Q', user_id)
 
+        for user_id, username in self.list_of_users:
+            username_length = len(username)
+            request += struct.pack('QB', user_id, username_length)
+            request += username.encode()
 
-
-        #start_of_request = struct.pack
-
+        return request
     
-    #start_of_request = struct.pack('BQBB', self.code.CONNECT_REQUEST, self.userid, length_id, length_pwd)
 
-     #       if self.userid == 0 :
-      #              raise ValueError
-            
-        #    completed_request = start_of_request + length_id + length_pwd + username + passwd
-            
-       #     return connectRequest
-        
-
-       # def connectResponse():
-
-       #     struct.pack('Q',bytes(self.userid))
-
-      #      if self.userid == 0 :
-       #             raise ValueError
-            
-       # def userRequest():
-              
