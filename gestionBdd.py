@@ -4,6 +4,8 @@ import pickle
 import hmac
 import os.path
 import threading as th # Pour les threads (et les verrous)
+from datetime import datetime
+
 
 NAME_OF_BDD_FILE = "bdd.pickle"
 
@@ -17,22 +19,22 @@ def hash512(password : str) -> str:
 class Bdd():
     
     list_of_users : list[tuple[int, str, str]]
-    list_of_messages : list[int]
-    lock : th.Lock
+    list_of_messages : list[tuple[int, datetime, int, str]]
+    lock_user : th.Lock
 
     def __init__(self):
         self.list_of_users = []
         self.list_of_messages = []
-        self.lock = th.Lock() 
+        self.lock_user = th.Lock() 
 
     def __getstate__(self):
         state = self.__dict__.copy()
-        del state['lock']  # Exclude the lock from pickling, it can't be pickled
+        del state['lock_user']  # Exclude the lock_user from pickling, it can't be pickled
         return state
 
     def __setstate__(self, state : dict[str, list[tuple[int, str, str]]]):
         self.__dict__.update(state)
-        self.lock = th.Lock()  # Recreate the lock when unpickling
+        self.lock_user = th.Lock()  # Recreate the lock_user when unpickling
 
     @staticmethod
     def load_bdd_from_disk(secret_key: bytes = b'password') -> "Bdd":
@@ -66,7 +68,7 @@ class Bdd():
     
 
     def save_bdd_on_disk(self, secret_key: bytes = b'password') -> bytes:
-        with self.lock:
+        with self.lock_user:
             data = pickle.dumps(self)
             signature = hmac.new(secret_key, data, hashlib.sha512).digest()
             with open(NAME_OF_BDD_FILE, 'wb') as f:
@@ -100,7 +102,7 @@ class Bdd():
         Returns:
             int: id of the user added.
         """
-        with self.lock:
+        with self.lock_user:
             if self.username_exists(username):
                 raise ValueError("Username already exists")
             
@@ -119,18 +121,26 @@ class Bdd():
             int: id of the user if the username and password are correct, -1 otherwise. 
             (We could also raise an exception)
         """
-        with self.lock:
+        with self.lock_user:
             for user in self.list_of_users:
                 if user[1] == username and user[2] == hash512(password):
                     return user[0]
             return -1
-            
+        
+    def add_new_message(self, datetime_of_message : datetime, author_id: int, text_message: str):
+        ...
+
+    def get_x_message(self, nb_of_message_request : int = 20) -> list[tuple[int, datetime, int, str]]:
+        ...
+
+    
 
 
+    
 labdd : Bdd = Bdd.load_bdd_from_disk()
 
 # try with so many threads that some of them are killed by the OS before they can finish
 for i in range(10000):
-    th.Thread(target=labdd.add_user, args=(f"User{i}", f"Password{i}")).start()
+    th.Thread(target=labdd.add_user, args=(f"Userr{i}", f"Password{i}")).start()
 
 labdd.save_bdd_on_disk()
