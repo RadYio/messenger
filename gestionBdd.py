@@ -156,13 +156,9 @@ class Bdd():
 labdd : Bdd = Bdd.load_bdd_from_disk()
 
 # try with so many threads that some of them are killed by the OS before they can finish
-for i in range(10000):
-    th.Thread(target=labdd.add_user, args=(f"Userr{i}", f"Password{i}")).start()
+#for i in range(10000):
+    #th.Thread(target=labdd.add_user, args=(f"Userr{i}", f"Password{i}")).start()
 
-
-labdd.add_new_message(datetime.now(), 10, 'yoo')
-labdd.add_new_message(datetime.now(), 10, 'yooddd')
-labdd.add_new_message(datetime.now(), 10, 'yoodddegrherh')
 
 print(labdd.get_x_message())
 labdd.save_bdd_on_disk()
