@@ -181,11 +181,12 @@ class ConnectRequest(Message):
 
     @classmethod
     def decode(cls, data: bytes) -> ConnectRequest :
-        size_of_header : int = struct.calcsize('BQBB')
-        (_, userid, length_username, length_pwd) = struct.unpack('BQBB', data)
-
+        size_of_header : int = struct.calcsize('!BQBB')
+        (_, userid, length_username, length_pwd) = struct.unpack('!BQBB', data)
+        print('tailleu:' , length_username)
+        print('taillep:' , length_pwd)
         # On se place à la fin de l'entête pour récupérer les données puis on se deplace de la taille de l'username pour recuperer l'username en bytes
-        username= data[size_of_header:size_of_header+length_username].decode()
+        username = data[size_of_header:size_of_header+length_username].decode()
 
         # On se place à la fin de l'en-tête et de l'username, puis on se deplace de la taille du password pour recuperer le password en bytes
         passwd = data[size_of_header+length_username:size_of_header+length_username+length_pwd].decode()
