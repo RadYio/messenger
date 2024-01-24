@@ -21,14 +21,13 @@ def dummy_handler(inqueue: Queue[str], outqueue: Queue[list[message[str]]], addr
     counter = 0
     try:
         with Client().connect(address) as conn:
-            while True:
-                message = ConnectRequest(0, 'username', 'password')
-                conn.send(message.encode())
-                response = conn.recv().decode()
-                with open('fff.txt', 'w') as f:
-                    f.write(response)
-                exit()
-                counter += 1
+            message = ConnectRequest(0, 'username4', 'password')
+            conn.send(message.encode())
+            response = conn.recv()
+            fe : ConnectResponse = ConnectResponse.decode(response)
+            mon_id = fe.userid
+            outqueue.put([(counter, datetime.now(), 1, f"Mon id est {mon_id}")])
+            time.sleep(1)
     except Exception as exn:
         exceptions.append(exn)
 

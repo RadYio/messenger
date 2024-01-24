@@ -46,10 +46,14 @@ def smart_handler(conn: Connection):
                     case Code.CONNECT_REQUEST:
                         logging.info(f'{thread.name} fileno {conn.fileno()}: CONNECT_REQUEST')
                         message = ConnectRequest.decode(data)
+                        logging.info(f'{thread.name} fileno {conn.fileno()}: message.username = {message.username}')
                         if the_bdd.username_exists(message.username):
+                            logging.info(f'{thread.name} fileno {conn.fileno()}: check_connexion')
                             user_id_of_the_session = the_bdd.check_connexion(message.username, message.passwd)
                         else:
                             user_id_of_the_session = the_bdd.add_user(message.username, message.passwd)
+                            logging.info(f'{thread.name} fileno {conn.fileno()}: add_user')
+                        logging.info(f'{thread.name} fileno {conn.fileno()}: user_id_of_the_session = {user_id_of_the_session}')
 
                         message2 = ConnectResponse(user_id_of_the_session) 
                         conn.send(message2.encode())
