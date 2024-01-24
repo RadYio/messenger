@@ -76,6 +76,7 @@ class Bdd():
         test : Bdd = pickle.loads(data)
 
         print(test.list_of_users)
+        print(test.list_of_messages)
         return pickle.loads(data)
     
 

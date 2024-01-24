@@ -72,9 +72,7 @@ def smart_handler(conn: Connection):
                             message2 = PostResponse(message.userid, 0, -1)
                         
                         conn.send(message2.encode())
-
-
-
+                        
                     case _:
                         logging.info(f'{thread.name} fileno {conn.fileno()}: UNKNOWN')
                         ...
