@@ -12,9 +12,33 @@ from queue import Queue, Empty
 from threading import Thread
 
 from connection import Client
-from message import message
+from message import *
 
 exceptions: list[Exception] = []
+
+
+def smart_handler(inqueue: Queue[str], outqueue: Queue[list[message[str]]], address: tuple[str, int], username : str, password : str):
+    counter = 0
+    try:
+        with Client().connect(address) as conn:
+            mon_id : int
+            message = ConnectRequest(0, username, password)
+            conn.send(message.encode())
+
+            receive = conn.recv()
+            fesse : ConnectResponse = ConnectResponse().decode(receive)
+            mon_id = fesse.userid
+            while True:
+
+    except Exception as exn:
+        exceptions.append(exn)
+
+        while True:
+                message = inqueue.get()
+                conn.send(message.encode())
+                message = conn.recv().decode()
+                counter += 1
+                outqueue.put([(counter, datetime.now(), 1, message)])
 
 
 def dummy_handler(inqueue: Queue[str], outqueue: Queue[list[message[str]]], address: tuple[str, int]):
@@ -105,7 +129,7 @@ def main(window: curses.window, address: tuple[str, int], username: str, passwor
     outqueue: Queue[list[message[str]]] = Queue()
     usernames: dict[int, str] = {}
 
-    thread = Thread(target=dummy_handler, args=(inqueue, outqueue, address), daemon=True)
+    thread = Thread(target=smart_handler, args=(inqueue, outqueue, address, username, password), daemon=True)
     thread.start()
 
     # Initialize terminal windows
