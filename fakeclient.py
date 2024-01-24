@@ -10,7 +10,7 @@ from collections import deque
 from datetime import datetime
 from queue import Queue, Empty
 from threading import Thread
-
+import time
 from connection import Client
 from message import *
 
@@ -24,10 +24,11 @@ def dummy_handler(inqueue: Queue[str], outqueue: Queue[list[message[str]]], addr
             while True:
                 message = ConnectRequest(0, 'username', 'password')
                 conn.send(message.encode())
+                response = conn.recv().decode()
+                with open('fff.txt', 'w') as f:
+                    f.write(response)
                 exit()
-                message = conn.recv().decode()
                 counter += 1
-                outqueue.put([(counter, datetime.now(), 1, message)])
     except Exception as exn:
         exceptions.append(exn)
 

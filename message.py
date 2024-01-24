@@ -220,11 +220,11 @@ class ConnectResponse(Message):
 
     @classmethod
     def decode(cls, data: bytes) -> ConnectResponse :
-        (_, userid) = struct.unpack('BQ', data)
+        (_, userid) = struct.unpack('!BQ', data)
         return ConnectResponse(userid)
 
     def encode(self) -> bytes:
-        return struct.pack('BQ', self.code, self.userid)
+        return struct.pack('!BQ', self.code, self.userid)
 
 
 
