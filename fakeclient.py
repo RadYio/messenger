@@ -24,6 +24,7 @@ def dummy_handler(inqueue: Queue[str], outqueue: Queue[list[message[str]]], addr
             while True:
                 message = ConnectRequest(0, 'username', 'password')
                 conn.send(message.encode())
+                exit()
                 message = conn.recv().decode()
                 counter += 1
                 outqueue.put([(counter, datetime.now(), 1, message)])
