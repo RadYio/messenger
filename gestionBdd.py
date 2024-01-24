@@ -1,4 +1,4 @@
-
+from __future__ import annotations
 import hashlib
 import pickle
 import hmac
@@ -41,7 +41,7 @@ class Bdd():
         self.lock_message = th.Lock() # Recreate the lock_user when unpickling
 
     @staticmethod
-    def load_bdd_from_disk(secret_key: bytes = b'password') -> "Bdd":
+    def load_bdd_from_disk(secret_key: bytes = b'password') -> Bdd:
         """Load the database from the disk. The database is signed with HMAC-SHA512.
             Also check if the file exists. If not, create a new database from scratch.
         
@@ -59,7 +59,12 @@ class Bdd():
         # Check if the file exists and create a new database from scratch if not
         if not os.path.isfile(NAME_OF_BDD_FILE):
             print("Bdd created from scratch")
-            return Bdd()
+            empty_bdd : Bdd = Bdd()
+            empty_bdd.add_user("admin", "admin")
+            empty_bdd.add_user("user", "user")
+            empty_bdd.add_new_message(datetime.now(), 1, "Bienvenue sur le chat")
+            empty_bdd.add_new_message(datetime.now(), 2, "="*20)
+            return empty_bdd
 
         # Load the database from the disk and check the signature to avoid tampering héhé
         with open(NAME_OF_BDD_FILE, 'rb') as f:
@@ -68,7 +73,11 @@ class Bdd():
         if not hmac.compare_digest(signature, hmac.new(secret_key, data, hashlib.sha512).digest()):
             raise ValueError('Invalid signature')
         
-        return pickle.loads(data)
+        test : Bdd = pickle.loads(data)
+
+        print(test.list_of_users)
+        print(test.list_of_messages)
+        return test
     
 
     def save_bdd_on_disk(self, secret_key: bytes = b'password') -> bytes:
@@ -131,7 +140,7 @@ class Bdd():
                     return user[0]
             return -1
         
-    def add_new_message(self, datetime_of_message : datetime, author_id: int, text_message: str):
+    def add_new_message(self, datetime_of_message : datetime, author_id: int, text_message: str) -> int:
         ...
         with self.lock_message:
             id_of_message : int = len(self.list_of_messages) + 1
@@ -139,6 +148,7 @@ class Bdd():
             # Construct a new tuple before adding. We should do -- self.list_of_messages.append((id_of_message, datetime_of_message, author_id, text_message))
             new_tuple : tuple[int, datetime, int, str] = (id_of_message, datetime_of_message, author_id, text_message)
             self.list_of_messages.append(new_tuple)
+            return id_of_message
 
 
     def get_x_message(self, nb_of_message_request : int = 20) -> list[tuple[int, datetime, int, str]]:
@@ -149,20 +159,9 @@ class Bdd():
             return self.list_of_messages[nb_message_in_list - nb_message:]
         
 
-    
-
-
-
-labdd : Bdd = Bdd.load_bdd_from_disk()
 
 # try with so many threads that some of them are killed by the OS before they can finish
-for i in range(10000):
-    th.Thread(target=labdd.add_user, args=(f"Userr{i}", f"Password{i}")).start()
+#for i in range(10000):
+    #th.Thread(target=labdd.add_user, args=(f"Userr{i}", f"Password{i}")).start()
 
 
-labdd.add_new_message(datetime.now(), 10, 'yoo')
-labdd.add_new_message(datetime.now(), 10, 'yooddd')
-labdd.add_new_message(datetime.now(), 10, 'yoodddegrherh')
-
-print(labdd.get_x_message())
-labdd.save_bdd_on_disk()
