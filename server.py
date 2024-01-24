@@ -45,17 +45,23 @@ def smart_handler(conn: Connection):
 
                     case Code.CONNECT_REQUEST:
                         logging.info(f'{thread.name} fileno {conn.fileno()}: CONNECT_REQUEST')
+
                         message = ConnectRequest.decode(data)
-                        logging.info(f'{thread.name} fileno {conn.fileno()}: message.username = {message.username}')
+                        logging.info(f'{thread.name} fileno {conn.fileno()}: Check if username: {message.username} exists')
+
                         if the_bdd.username_exists(message.username):
-                            logging.info(f'{thread.name} fileno {conn.fileno()}: check_connexion')
+                            logging.info(f'{thread.name} fileno {conn.fileno()}: yes, now check if password is correct')
                             user_id_of_the_session = the_bdd.check_connexion(message.username, message.passwd)
+                            logging.info(f'{thread.name} fileno {conn.fileno()}: yes, good password')
+
                         else:
                             user_id_of_the_session = the_bdd.add_user(message.username, message.passwd)
-                            logging.info(f'{thread.name} fileno {conn.fileno()}: add_user')
-                        logging.info(f'{thread.name} fileno {conn.fileno()}: user_id_of_the_session = {user_id_of_the_session}')
+                            logging.info(f'{thread.name} fileno {conn.fileno()}: No, create a new user')
 
+                        logging.info(f'{thread.name} fileno {conn.fileno()}: Create the response with the user_id = {user_id_of_the_session}')
                         message2 = ConnectResponse(user_id_of_the_session) 
+
+                        logging.info(f'{thread.name} fileno {conn.fileno()}: Send the response')
                         conn.send(message2.encode())
 
                     case Code.POST_REQUEST:
