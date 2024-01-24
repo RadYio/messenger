@@ -45,9 +45,7 @@ def smart_handler(conn: Connection):
 
                     case Code.CONNECT_REQUEST:
                         logging.info(f'{thread.name} fileno {conn.fileno()}: CONNECT_REQUEST')
-                        print(data)
                         message = ConnectRequest.decode(data)
-                        print('------')
                         if the_bdd.username_exists(message.username):
                             user_id_of_the_session = the_bdd.check_connexion(message.username, message.passwd)
                         else:
