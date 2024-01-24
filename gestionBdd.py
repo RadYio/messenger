@@ -63,8 +63,8 @@ class Bdd():
             empty_bdd.add_user("admin", "admin")
             empty_bdd.add_user("user", "user")
             empty_bdd.add_new_message(datetime.now(), 1, "Bienvenue sur le chat")
-            empty_bdd.add_new_message(datetime.now(), 2, "=*"*20)
-            return Bdd()
+            empty_bdd.add_new_message(datetime.now(), 2, "="*20)
+            return empty_bdd
 
         # Load the database from the disk and check the signature to avoid tampering héhé
         with open(NAME_OF_BDD_FILE, 'rb') as f:
@@ -77,7 +77,7 @@ class Bdd():
 
         print(test.list_of_users)
         print(test.list_of_messages)
-        return pickle.loads(data)
+        return test
     
 
     def save_bdd_on_disk(self, secret_key: bytes = b'password') -> bytes:
