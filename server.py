@@ -72,7 +72,7 @@ def smart_handler(conn: Connection):
                             message2 = PostResponse(message.userid, 0, -1)
                         
                         conn.send(message2.encode())
-                        
+
                     case _:
                         logging.info(f'{thread.name} fileno {conn.fileno()}: UNKNOWN')
                         ...
@@ -127,7 +127,13 @@ def main():
     logging.basicConfig(level=logging.DEBUG if args.verbose else logging.INFO,
                         format='%(asctime)s [%(levelname)s] %(message)s',
                         datefmt='%m-%d-%Y %H:%M:%S')
-    serve((args.ip, args.port), args.certfile, args.keyfile)
+    try:
+        serve((args.ip, args.port), args.certfile, args.keyfile)
+    except KeyboardInterrupt:
+        logging.info("Server interrupted by Ctrl+C")
+    finally:
+        logging.info('Bye Admin!')
+        the_bdd.save_bdd_on_disk()
 
 
 if __name__ == '__main__':
