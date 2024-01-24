@@ -21,7 +21,7 @@ def dummy_handler(inqueue: Queue[str], outqueue: Queue[list[message[str]]], addr
     counter = 0
     try:
         with Client().connect(address) as conn:
-            message = ConnectRequest(0, 'username4', 'password')
+            message = ConnectRequest(0, 'username2', 'password')
             conn.send(message.encode())
             response = conn.recv()
             fe : ConnectResponse = ConnectResponse.decode(response)

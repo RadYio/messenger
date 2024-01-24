@@ -68,6 +68,9 @@ class Bdd():
         if not hmac.compare_digest(signature, hmac.new(secret_key, data, hashlib.sha512).digest()):
             raise ValueError('Invalid signature')
         
+        test : Bdd = pickle.loads(data)
+
+        print(test.list_of_users)
         return pickle.loads(data)
     
 
