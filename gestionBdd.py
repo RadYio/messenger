@@ -59,6 +59,11 @@ class Bdd():
         # Check if the file exists and create a new database from scratch if not
         if not os.path.isfile(NAME_OF_BDD_FILE):
             print("Bdd created from scratch")
+            empty_bdd : Bdd = Bdd()
+            empty_bdd.add_user("admin", "admin")
+            empty_bdd.add_user("user", "user")
+            empty_bdd.add_new_message(datetime.now(), 1, "Bienvenue sur le chat")
+            empty_bdd.add_new_message(datetime.now(), 2, "=*"*20)
             return Bdd()
 
         # Load the database from the disk and check the signature to avoid tampering héhé
@@ -153,19 +158,9 @@ class Bdd():
             return self.list_of_messages[nb_message_in_list - nb_message:]
         
 
-    
-
-
-
-labdd : Bdd = Bdd.load_bdd_from_disk()
 
 # try with so many threads that some of them are killed by the OS before they can finish
 #for i in range(10000):
     #th.Thread(target=labdd.add_user, args=(f"Userr{i}", f"Password{i}")).start()
 
-labdd.add_new_message(datetime.now(), 1, "Message 1")
-labdd.add_new_message(datetime.now(), 1, "Message 2")
-labdd.add_new_message(datetime.now(), 1, "Message 3")
 
-print(labdd.get_x_message())
-labdd.save_bdd_on_disk()
