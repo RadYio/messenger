@@ -32,12 +32,12 @@ def smart_handler(conn: Connection):
 
                         logging.info(f'{thread.name} fileno {conn.fileno()}: Demande de {message.nbrmsg} messages de la part de {message.userid}')
                         all_messages : list[tuple[int, datetime, int, str]] = the_bdd.get_x_message(message.nbrmsg)
-                        message_header : list[tuple[int, datetime, int, int]] = list()
+                        message_header : list[tuple[int, datetime, int, int, str]] = list()
                         
                         # Pour tous tous les messages, on ajoute le header
                         for msg in all_messages:
-                            message_header.append((msg[0], msg[1], msg[2], len(msg[3])))
-                        message2 = MessageResponse(message.userid, len(all_messages), message_header, all_messages[0][3])
+                            message_header.append((msg[0], msg[1], msg[2], len(msg[3]), msg[3]))
+                        message2 = MessageResponse(message.userid, len(all_messages), message_header)
 
                         # Envoie de la réponse
                         conn.send(message2.encode())
@@ -45,13 +45,17 @@ def smart_handler(conn: Connection):
                         logging.info(f'{thread.name} fileno {conn.fileno()}: USER_REQUEST')
                         message  = UsersRequest.decode(data)
 
+                        list_of_users : list[tuple[int, str]] = list()
+
                         logging.info(f'{thread.name} fileno {conn.fileno()}: Demande de {message.nbr_user_request} users de la part de {message.userid}')
                         for user_id_ask in message.list_userid:
                             logging.info(f'{thread.name} fileno {conn.fileno()}: Demande de {user_id_ask}')
                             username : str = the_bdd.get_username(user_id_ask)
                             logging.info(f'{thread.name} fileno {conn.fileno()}: Username de {user_id_ask} est {username}')
-                            message2 = UsersResponse(message.userid, user_id_ask, username)
-                            conn.send(message2.encode())
+                            list_of_users.append((user_id_ask, username))
+
+                        message2 = UsersResponse(message.userid, len(list_of_users), list_of_users)
+                        conn.send(message2.encode())
 
                     case Code.CONNECT_REQUEST:
                         logging.info(f'{thread.name} fileno {conn.fileno()}: CONNECT_REQUEST')
