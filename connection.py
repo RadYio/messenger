@@ -31,8 +31,7 @@ class Connection:
 
         """
         size_of_payload_in_header = struct.pack("!L", len(data))
-        nb_bytes : int = self.my_socket.send(size_of_payload_in_header+data)
-        print(f"Sent {nb_bytes} bytes")
+        self.my_socket.sendall(size_of_payload_in_header+data)
 
     def recv(self) -> bytes:
         """Receive data from the socket of the connection. See `socket.recv`.
@@ -41,7 +40,9 @@ class Connection:
             bytes: Data received.
 
         """
-        size_of_payload_in_header = struct.unpack('!L', self.my_socket.recv(4))[0]
+        t = self.my_socket.recv(4)
+        print(t)
+        (size_of_payload_in_header, ) = struct.unpack('!L', t)
         data : bytes = self.my_socket.recv(size_of_payload_in_header)
         print(f"Received {len(data)} bytes")
         return data
