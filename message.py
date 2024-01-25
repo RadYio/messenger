@@ -116,7 +116,7 @@ class MessageResponse(Message):
     def encode(self) -> bytes :
             msgresponse = struct.pack('!BQB', self.code, self.userid, self.nbrmsg)
             for elem in self.message_header:
-                header = struct.pack('!QQQH', elem[0], elem[1], elem[2], elem[3])
+                header = struct.pack('!QdQH', elem[0], elem[1].timestamp(), elem[2], elem[3])
                 msgresponse += header
 
             for elem in self.message_header:  
@@ -254,11 +254,10 @@ class UsersRequest(Message):
         (_, userid, nbr_user_request) = struct.unpack('!BQB', data[:first_unpack])
         size_of_user = struct.calcsize('!Q')
 
-
         list_of_users_id : list[int] = list()
 
         for _ in range(nbr_user_request): 
-            (temp,_) = struct.unpack('!Q', data[first_unpack:first_unpack + size_of_user])
+            (temp, _) = struct.unpack('!Q', data[first_unpack:first_unpack + size_of_user])
             
             first_unpack += size_of_user
             list_of_users_id.append(temp)

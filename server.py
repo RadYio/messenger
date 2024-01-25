@@ -44,7 +44,7 @@ def smart_handler(conn: Connection):
                         # Envoie de la réponse
                         conn.send(message2.encode())
                     case Code.USERS_REQUEST:
-                        logging.info(f'{thread.name} fileno {conn.fileno()}: USER_REQUEST')
+                        logging.info(f'{thread.name} fileno {conn.fileno()}: USERS_REQUEST')
                         message  = UsersRequest.decode(data)
 
                         list_of_users : list[tuple[int, str]] = list()
