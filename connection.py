@@ -5,7 +5,6 @@ from types import TracebackType
 
 from socket import socket, SOCK_STREAM
 import ssl
-import time
 
 
 class Connection:
