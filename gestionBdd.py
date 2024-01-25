@@ -18,8 +18,8 @@ def hash512(password : str) -> str:
 
 class Bdd():
     
-    list_of_users : list[tuple[int, str, str]]
-    list_of_messages : list[tuple[int, datetime, int, str]]
+    list_of_users : list[tuple[int, str, str]] # id, username, password (hash)
+    list_of_messages : list[tuple[int, datetime, int, str]] # id, datetime, author_id, text_message
     lock_user : th.Lock
     lock_message : th.Lock
 
@@ -141,7 +141,6 @@ class Bdd():
             return -1
         
     def add_new_message(self, datetime_of_message : datetime, author_id: int, text_message: str) -> int:
-        ...
         with self.lock_message:
             id_of_message : int = len(self.list_of_messages) + 1
 
@@ -152,11 +151,17 @@ class Bdd():
 
 
     def get_x_message(self, nb_of_message_request : int = 20) -> list[tuple[int, datetime, int, str]]:
-        ...
         with self.lock_message:
             nb_message_in_list : int = len(self.list_of_messages)
             nb_message : int = nb_message_in_list if nb_of_message_request > nb_message_in_list else nb_of_message_request
             return self.list_of_messages[nb_message_in_list - nb_message:]
+        
+    def get_username(self, user_id : int) -> str:
+        with self.lock_user:
+            for user in self.list_of_users:
+                if user[0] == user_id:
+                    return user[1]
+            return "Unknown"
         
 
 
