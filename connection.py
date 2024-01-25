@@ -1,4 +1,5 @@
 from __future__ import annotations
+import struct
 
 from types import TracebackType
 
@@ -24,12 +25,13 @@ class Connection:
 
     def send(self, data: bytes):
         """Send data to the socket of the connection. See `socket.send`.
-        
+            the send method will prefix a 4-bytes big-endian header indicating the length of the subsequent data.
         Args:
             data (bytes): Data to send.
 
         """
-        nb_bytes : int = self.my_socket.send(data)
+        size_of_payload_in_header = struct.pack("!L", len(data))
+        nb_bytes : int = self.my_socket.send(size_of_payload_in_header+data)
         print(f"Sent {nb_bytes} bytes")
 
     def recv(self) -> bytes:
@@ -39,7 +41,8 @@ class Connection:
             bytes: Data received.
 
         """
-        data : bytes = self.my_socket.recv(1024)
+        size_of_payload_in_header = struct.unpack('!L', self.my_socket.recv(4))[0]
+        data : bytes = self.my_socket.recv(size_of_payload_in_header)
         print(f"Received {len(data)} bytes")
         return data
 
