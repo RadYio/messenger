@@ -266,6 +266,7 @@ class UsersRequest(Message):
     def encode(self) -> bytes:
         request = struct.pack('!BQB', self.code, self.userid, self.nbr_user_request)
 
+
         for element in self.list_userid:
             request  += struct.pack('!Q', element)
 
@@ -290,7 +291,6 @@ class UsersResponse(Message):
 
     @classmethod
     def decode(cls, data: bytes) -> UsersResponse :
-
         first_unpack = struct.calcsize('!BQB')
         (_, userid, nbr_user_request) = struct.unpack('!BQB', data[:first_unpack])
         list_temp : list[tuple[int, int]] = list()
@@ -309,6 +309,7 @@ class UsersResponse(Message):
             username = data[first_unpack:first_unpack + length_ask].decode()
             first_unpack += length_ask
             list_of_needed_users.append((id_ask, username))
+
 
 
         return UsersResponse(userid, nbr_user_request, list_of_needed_users)

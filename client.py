@@ -31,8 +31,10 @@ def smart_handler(inqueue: Queue[str], outqueue: Queue[list[message[str]]], addr
             receive_connect = conn.recv()
             receive_connect_decode : ConnectResponse = ConnectResponse.decode(receive_connect)
             mon_id = receive_connect_decode.userid
+            userid_dict[mon_id]=username
+
         
-            message = MessageRequest(mon_id, threadid_temp, 4)
+            message = MessageRequest(mon_id, threadid_temp, 64)
             conn.send(message.encode())
 
             receive_message = conn.recv()
@@ -42,7 +44,7 @@ def smart_handler(inqueue: Queue[str], outqueue: Queue[list[message[str]]], addr
 
             # verification de la connaisance dans le dict
             for mes in receive_message_decode.message_header:
-                if mes[2] not in userid_dict:
+                if mes[2] not in userid_dict and mes[2] not in userid_temp:
                     userid_temp.append(mes[2])
 
             # si un user pas connu alors, userrequest, sinon go a la suite                 
@@ -64,7 +66,8 @@ def smart_handler(inqueue: Queue[str], outqueue: Queue[list[message[str]]], addr
             while True : 
                 # recuperer depuis la Queue les messages, les envoyer, et attendre la réponse pour verification et si bonne reponse
                 # afficher dans le chat via outqueue 
-                message = inqueue.get()
+                message = inqueue.get(timeout=2)
+                
 
                 post = PostRequest(mon_id, threadid_temp, len(message), message)
                 conn.send(post.encode())
