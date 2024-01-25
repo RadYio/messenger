@@ -85,10 +85,9 @@ class MessageResponse(Message):
 
     code = Code.MESSAGES_RESPONSE
     nbrmsg : int
-    message_header : list[tuple[int, datetime, int, int, str]]
-    message : list[str]
+    message_header : list[tuple[int, float, int, int, str]]
 
-    def __init__(self, userid : int, nbrmsg : int, message_header : list[tuple[int, datetime, int, int, str]]):
+    def __init__(self, userid : int, nbrmsg : int, message_header : list[tuple[int, float, int, int, str]]):
 
         self.userid = userid
         self.nbrmsg = nbrmsg
@@ -97,7 +96,7 @@ class MessageResponse(Message):
 
     @classmethod    
     def decode(cls, data: bytes) -> MessageResponse :
-        message_header : list[tuple[int, datetime, int, int]] = list()
+        message_header : list[tuple[int, float, int, int]] = list()
         size_start = struct.calcsize('!BQB')
         (_, userid, nbrmsg) = struct.unpack('!BQB', data[:size_start])
         size_header = struct.calcsize('!QQQH')
@@ -107,7 +106,7 @@ class MessageResponse(Message):
             message_header.append((messageid, datepub, userauthorid, lenghtmsg))
             size_start += size_header
 
-        message : list[tuple[int, datetime, int, int, str]] = list()
+        message : list[tuple[int, float, int, int, str]] = list()
         for i in range(0, nbrmsg):
             message.append((message_header[i][0], message_header[i][1], message_header[i][2], message_header[i][3], data[size_start:message_header[i][3]].decode()))
             size_start += message_header[i][3]
@@ -116,7 +115,7 @@ class MessageResponse(Message):
     def encode(self) -> bytes :
             msgresponse = struct.pack('!BQB', self.code, self.userid, self.nbrmsg)
             for elem in self.message_header:
-                header = struct.pack('!QdQH', elem[0], elem[1].timestamp(), elem[2], elem[3])
+                header = struct.pack('!QdQH', elem[0], elem[1], elem[2], elem[3])
                 msgresponse += header
 
             for elem in self.message_header:  

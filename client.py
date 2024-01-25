@@ -39,12 +39,13 @@ def smart_handler(inqueue: Queue[str], outqueue: Queue[list[message[str]]], addr
             receive_message_decode : MessageResponse = MessageResponse.decode(receive_message)
 
             userid_temp : list[int] = list()
+
             # verification de la connaisance dans le dict
             for mes in receive_message_decode.message_header:
                 if mes[2] not in userid_dict:
                     userid_temp.append(mes[2])
 
-            """# si un user pas connu alors, userrequest, sinon go a la suite                 
+            # si un user pas connu alors, userrequest, sinon go a la suite                 
             user = UsersRequest(mon_id, len(userid_temp), userid_temp)
             conn.send(user.encode())
 
@@ -52,18 +53,18 @@ def smart_handler(inqueue: Queue[str], outqueue: Queue[list[message[str]]], addr
             receive_user_decode : UsersResponse = UsersResponse.decode(receive_user)
             for users in receive_user_decode.list_of_users:
                 if users[0] not in userid_dict:
-                    userid_dict[users[0]]=users[1]"""
+                    userid_dict[users[0]]=users[1]
 
             # si un user pas connu alors, userrequest, sinon go a la suite
             for mes in receive_message_decode.message_header:
-                outqueue.put([mes[0]])
-                outqueue.put([(mes[0], mes[1], mes[2], mes[4])])
+                #outqueue.put([(mes[0], datetime.now(), mes[2], str(mes[1]))])
+                outqueue.put([(mes[0], datetime.fromtimestamp(mes[1]), mes[2], mes[4])])
 
             time.sleep(3)  
             
             while True : 
                 # recuperer depuis la Queue les messages, les envoyer, et attendre la réponse pour verification et si bonne reponse
-                # afficher dans le chat via outqueue c
+                # afficher dans le chat via outqueue 
                 message = inqueue.get()
 
                 post = PostRequest(mon_id, threadid_temp, len(message), message)
@@ -173,7 +174,7 @@ def main(window: curses.window, address: tuple[str, int], username: str, passwor
     outqueue: Queue[list[message[str]]] = Queue()
     usernames: dict[int, str] = {}
 
-    thread = Thread(target=smart_handler, args=(inqueue, outqueue, address, username, password,usernames), daemon=True)
+    thread = Thread(target=smart_handler, args=(inqueue, outqueue, address, username, password, usernames), daemon=True)
     thread.start()
 
     # Initialize terminal windows
