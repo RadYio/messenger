@@ -5,7 +5,7 @@ from types import TracebackType
 
 from socket import socket, SOCK_STREAM
 import ssl
-
+import time
 
 
 class Connection:
@@ -41,7 +41,10 @@ class Connection:
 
         """
         t = self.my_socket.recv(4)
+        while len(t) < 4:
+            t += self.my_socket.recv(4-len(t))
         print(t)
+        time.sleep(10)
         (size_of_payload_in_header, ) = struct.unpack('!L', t)
         data : bytes = self.my_socket.recv(size_of_payload_in_header)
         print(f"Received {len(data)} bytes")
