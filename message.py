@@ -115,12 +115,12 @@ class MessageResponse(Message):
 
     def encode(self) -> bytes :
             msgresponse = struct.pack('!BQB', self.code, self.userid, self.nbrmsg)
-            for i in range (0,self.nbrmsg):
-                header = struct.pack('!QQQH', self.message_header[i])
+            for elem in self.message_header:
+                header = struct.pack('!QQQH', elem[0], elem[1], elem[2], elem[3])
                 msgresponse += header
-            for i in self.message :  
-                byte_message = i.encode()
-                msgresponse += byte_message
+
+            for elem in self.message_header:  
+                msgresponse += elem[4].encode()
             return msgresponse
 
 class PostRequest(Message):

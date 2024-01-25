@@ -37,6 +37,8 @@ def smart_handler(conn: Connection):
                         # Pour tous tous les messages, on ajoute le header
                         for msg in all_messages:
                             message_header.append((msg[0], msg[1], msg[2], len(msg[3]), msg[3]))
+
+                        print(message_header)
                         message2 = MessageResponse(message.userid, len(all_messages), message_header)
 
                         # Envoie de la réponse
