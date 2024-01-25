@@ -104,12 +104,12 @@ class MessageResponse(Message):
 
         for i in range(0, nbrmsg):
             (messageid, datepub, userauthorid, lenghtmsg) = struct.unpack('!QQQH', data[size_start:size_start+size_header])
-            message_header[i] = (messageid, datepub, userauthorid, lenghtmsg)
+            message_header.append((messageid, datepub, userauthorid, lenghtmsg))
             size_start += size_header
 
         message : list[tuple[int, datetime, int, int, str]] = list()
         for i in range(0, nbrmsg):
-            message[i] = (message_header[i][0], message_header[i][1], message_header[i][2], message_header[i][3], data[size_start:message_header[i][3]].decode())
+            message.append((message_header[i][0], message_header[i][1], message_header[i][2], message_header[i][3], data[size_start:message_header[i][3]].decode()))
             size_start += message_header[i][3]
         return MessageResponse(userid, nbrmsg, message)
 
