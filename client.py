@@ -19,7 +19,7 @@ exceptions: list[Exception] = []
 
 
 def smart_handler(inqueue: Queue[str], outqueue: Queue[list[message[str]]], address: tuple[str, int], username : str, password : str, userid_dict : dict[int,str]):
-    counter = 0
+    _counter = 0
     threadid_temp : int = 0
     
     try:
@@ -44,7 +44,7 @@ def smart_handler(inqueue: Queue[str], outqueue: Queue[list[message[str]]], addr
                 if mes[2] not in userid_dict:
                     userid_temp.append(mes[2])
 
-            # si un user pas connu alors, userrequest, sinon go a la suite                 
+            """# si un user pas connu alors, userrequest, sinon go a la suite                 
             user = UsersRequest(mon_id, len(userid_temp), userid_temp)
             conn.send(user.encode())
 
@@ -52,25 +52,27 @@ def smart_handler(inqueue: Queue[str], outqueue: Queue[list[message[str]]], addr
             receive_user_decode : UsersResponse = UsersResponse.decode(receive_user)
             for users in receive_user_decode.list_of_users:
                 if users[0] not in userid_dict:
-                    userid_dict[users[0]]=users[1]
+                    userid_dict[users[0]]=users[1]"""
 
             # si un user pas connu alors, userrequest, sinon go a la suite
             for mes in receive_message_decode.message_header:
+                outqueue.put([mes[0]])
                 outqueue.put([(mes[0], mes[1], mes[2], mes[4])])
 
-            time.sleep(10)    
-            exit()
-
-            post = PostRequest(mon_id, threadid_temp, len(message), message)
-            conn.send(post.encode())
-
-            receive_post = conn.recv()
-            receive_post_decode : PostResponse = PostResponse.decode(receive_post)
-
-
-
+            time.sleep(3)  
             
-                
+            while True : 
+                # recuperer depuis la Queue les messages, les envoyer, et attendre la réponse pour verification et si bonne reponse
+                # afficher dans le chat via outqueue c
+                message = inqueue.get()
+
+                post = PostRequest(mon_id, threadid_temp, len(message), message)
+                conn.send(post.encode())
+
+                receive_post = conn.recv()
+                receive_post_decode : PostResponse = PostResponse.decode(receive_post)
+
+                outqueue.put([(receive_post_decode.threadid, datetime.now(), receive_post_decode.userid, str(receive_post_decode.messageid))])          
             
     except Exception as exn:
         exceptions.append(exn)   

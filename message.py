@@ -103,7 +103,7 @@ class MessageResponse(Message):
         size_header = struct.calcsize('!QQQH')
 
         for i in range(0, nbrmsg):
-            (messageid, datepub, userauthorid, lenghtmsg) = struct.unpack('!QQQH', data[size_start:size_start+size_header])
+            (messageid, datepub, userauthorid, lenghtmsg) = struct.unpack('!QdQH', data[size_start:size_start+size_header])
             message_header.append((messageid, datepub, userauthorid, lenghtmsg))
             size_start += size_header
 
