@@ -32,7 +32,7 @@ def smart_handler(inqueue: Queue[str], outqueue: Queue[list[message[str]]], addr
             receive_connect_decode : ConnectResponse = ConnectResponse.decode(receive_connect)
             mon_id = receive_connect_decode.userid
         
-            message = MessageRequest(mon_id, threadid_temp, 64)
+            message = MessageRequest(mon_id, threadid_temp, 4)
             conn.send(message.encode())
 
             receive_message = conn.recv()
@@ -57,7 +57,6 @@ def smart_handler(inqueue: Queue[str], outqueue: Queue[list[message[str]]], addr
 
             # si un user pas connu alors, userrequest, sinon go a la suite
             for mes in receive_message_decode.message_header:
-                #outqueue.put([(mes[0], datetime.now(), mes[2], str(mes[1]))])
                 outqueue.put([(mes[0], datetime.fromtimestamp(mes[1]), mes[2], mes[4])])
 
             time.sleep(3)  
@@ -73,7 +72,7 @@ def smart_handler(inqueue: Queue[str], outqueue: Queue[list[message[str]]], addr
                 receive_post = conn.recv()
                 receive_post_decode : PostResponse = PostResponse.decode(receive_post)
 
-                outqueue.put([(receive_post_decode.threadid, datetime.now(), receive_post_decode.userid, str(receive_post_decode.messageid))])          
+                outqueue.put([(receive_post_decode.messageid, datetime.now(), receive_post_decode.userid,message)])          
             
     except Exception as exn:
         exceptions.append(exn)   

@@ -99,7 +99,7 @@ class MessageResponse(Message):
         message_header : list[tuple[int, float, int, int]] = list()
         size_start = struct.calcsize('!BQB')
         (_, userid, nbrmsg) = struct.unpack('!BQB', data[:size_start])
-        size_header = struct.calcsize('!QQQH')
+        size_header = struct.calcsize('!QdQH')
 
         for i in range(0, nbrmsg):
             (messageid, datepub, userauthorid, lenghtmsg) = struct.unpack('!QdQH', data[size_start:size_start+size_header])
@@ -108,7 +108,7 @@ class MessageResponse(Message):
 
         message : list[tuple[int, float, int, int, str]] = list()
         for i in range(0, nbrmsg):
-            message.append((message_header[i][0], message_header[i][1], message_header[i][2], message_header[i][3], data[size_start:message_header[i][3]].decode()))
+            message.append((message_header[i][0], message_header[i][1], message_header[i][2], message_header[i][3], data[size_start:size_start+message_header[i][3]].decode()))
             size_start += message_header[i][3]
         return MessageResponse(userid, nbrmsg, message)
 
