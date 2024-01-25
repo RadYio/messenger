@@ -24,9 +24,15 @@ def dummy_handler(inqueue: Queue[str], outqueue: Queue[list[message[str]]], addr
             message = ConnectRequest(0, 'username4', 'password')
             conn.send(message.encode())
             response = conn.recv()
-            fe : ConnectResponse = ConnectResponse.decode(response)
-            mon_id = fe.userid
+            response_decode  = ConnectResponse.decode(response)
+            mon_id = response_decode.userid
             outqueue.put([(counter, datetime.now(), 1, f"Mon id est {mon_id}")])
+            message = MessageRequest(mon_id, 0, 30)
+            conn.send(message.encode())
+            response = conn.recv()
+            response_decode = MessageResponse.decode(response)
+            outqueue.put([(counter, datetime.now(), 1, f"MessageResponse : {response_decode}")])
+
             time.sleep(1)
     except Exception as exn:
         exceptions.append(exn)
