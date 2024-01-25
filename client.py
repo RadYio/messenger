@@ -20,6 +20,7 @@ exceptions: list[Exception] = []
 def smart_handler(inqueue: Queue[str], outqueue: Queue[list[message[str]]], address: tuple[str, int], username : str, password : str):
     counter = 0
     threadid_temp : int = 0
+    userid_dict : dict[int, str] = dict()
     try:
         with Client().connect(address) as conn:
             mon_id : int
@@ -35,8 +36,15 @@ def smart_handler(inqueue: Queue[str], outqueue: Queue[list[message[str]]], addr
 
             receive_message = conn.recv()
             receive_message_decode : MessageResponse = MessageResponse.decode(receive_message)
+
+            # verification de la connaisance dans le dict
+            for mes in receive_message_decode.message_header:
+                
+
+            # si un user pas connu alors, userrequest, sinon go a la suite
             for mes in receive_message_decode.message_header:
                 outqueue.put([(counter, mes[1], 1, mes[4])])
+                
 
             user = UsersRequest(mon_id, 0, [0,0])
             conn.send(user.encode())
@@ -49,6 +57,7 @@ def smart_handler(inqueue: Queue[str], outqueue: Queue[list[message[str]]], addr
 
             receive_post = conn.recv()
             receive_post_decode : PostResponse = PostResponse.decode(receive_post)
+
 
 
             while True:
