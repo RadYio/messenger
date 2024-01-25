@@ -44,9 +44,10 @@ class Connection:
         while len(t) < 4:
             t += self.my_socket.recv(4-len(t))
         print(t)
-        time.sleep(10)
         (size_of_payload_in_header, ) = struct.unpack('!L', t)
-        data : bytes = self.my_socket.recv(size_of_payload_in_header)
+        data = self.my_socket.recv(size_of_payload_in_header)
+        while len(data) < size_of_payload_in_header:
+            data += self.my_socket.recv(size_of_payload_in_header-len(data))
         print(f"Received {len(data)} bytes")
         return data
 
