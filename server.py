@@ -85,18 +85,20 @@ def smart_handler(conn: Connection):
                         conn.send(message2.encode())
 
                     case Code.POST_REQUEST:
-                        logging.info(f'{thread.name} fileno {conn.fileno()}: POST_REQUEST')
+                        logging.info(f'{thread.name} fileno {conn.fileno()}: [POST_REQUEST]')
                         message = PostRequest.decode(data)
 
-                        #Check if the userid provided is the same as the one in the session
+                        #Check if the userid provided is the same as the one in the session even if tls we should have private and public key
+                        logging.info(f'{thread.name} fileno {conn.fileno()}: [POST_REQUEST] Check if the userid provided is the same as the one in the session')
                         if user_id_of_the_session == message.userid:
                             id_message : int = the_bdd.add_new_message(datetime.now(), message.userid, message.message)
-
+                            logging.info(f'{thread.name} fileno {conn.fileno()}: [POST_REQUEST] Message added with id {id_message}')
                             # A Corriger on pourrait mettre le threadid à 0 en default et verifier le renvoie de l'user id
                             message2 = PostResponse(message.userid, 0, id_message)
                         else:
                             message2 = PostResponse(message.userid, 0, -1)
                         
+                        logging.info(f'{thread.name} fileno {conn.fileno()}: [POST_REQUEST] Send the response')
                         conn.send(message2.encode())
 
                     case _:

@@ -42,12 +42,10 @@ class Connection:
         t = self.my_socket.recv(4)
         while len(t) < 4:
             t += self.my_socket.recv(4-len(t))
-        print(t)
         (size_of_payload_in_header, ) = struct.unpack('!L', t)
         data = self.my_socket.recv(size_of_payload_in_header)
         while len(data) < size_of_payload_in_header:
             data += self.my_socket.recv(size_of_payload_in_header-len(data))
-        print(f"Received {len(data)} bytes")
         return data
 
     def fileno(self) -> int:

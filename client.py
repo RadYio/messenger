@@ -61,21 +61,28 @@ def smart_handler(inqueue: Queue[str], outqueue: Queue[list[message[str]]], addr
             for mes in receive_message_decode.message_header:
                 outqueue.put([(mes[0], datetime.fromtimestamp(mes[1]), mes[2], mes[4])])
 
-            time.sleep(3)  
             
             while True : 
                 # recuperer depuis la Queue les messages, les envoyer, et attendre la réponse pour verification et si bonne reponse
                 # afficher dans le chat via outqueue 
-                message = inqueue.get(timeout=2)
+                message = MessageRequest(mon_id, threadid_temp, 4)
+                conn.send(message.encode())
+
+                try:
+                    message = inqueue.get(timeout=2)
+                    post = PostRequest(mon_id, threadid_temp, len(message), message)
+                    conn.send(post.encode())
+
+                    receive_post = conn.recv()
+                    receive_post_decode : PostResponse = PostResponse.decode(receive_post)
+
+                    outqueue.put([(receive_post_decode.messageid, datetime.now(), receive_post_decode.userid,message)]) 
+                except Empty:
+                    pass
+
                 
 
-                post = PostRequest(mon_id, threadid_temp, len(message), message)
-                conn.send(post.encode())
-
-                receive_post = conn.recv()
-                receive_post_decode : PostResponse = PostResponse.decode(receive_post)
-
-                outqueue.put([(receive_post_decode.messageid, datetime.now(), receive_post_decode.userid,message)])          
+                         
             
     except Exception as exn:
         exceptions.append(exn)   
