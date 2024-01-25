@@ -18,7 +18,7 @@ exceptions: list[Exception] = []
 
 
 def smart_handler(inqueue: Queue[str], outqueue: Queue[list[message[str]]], address: tuple[str, int], username : str, password : str):
-    _counter = 0
+    counter = 0
     threadid_temp : int = 0
     try:
         with Client().connect(address) as conn:
@@ -30,18 +30,27 @@ def smart_handler(inqueue: Queue[str], outqueue: Queue[list[message[str]]], addr
             receive_connect_decode : ConnectResponse = ConnectResponse.decode(receive_connect)
             mon_id = receive_connect_decode.userid
         
-            message = MessageRequest(0, threadid_temp, 10)
+            message = MessageRequest(mon_id, threadid_temp, 10)
             conn.send(message.encode())
 
             receive_message = conn.recv()
             receive_message_decode : MessageResponse = MessageResponse.decode(receive_message)
-            outqueue.put(receive_message_decode.message)
+            for mes in receive_message_decode.message_header:
+                outqueue.put([(counter, mes[1], 1, mes[4])])
 
             user = UsersRequest(mon_id, 0, [0,0])
             conn.send(user.encode())
 
             receive_user = conn.recv()
             _receive_user_decode : UsersResponse = UsersResponse.decode(receive_user)
+
+            post = PostRequest(mon_id, threadid_temp, len(message), message)
+            conn.send(post.encode())
+
+            receive_post = conn.recv()
+            receive_post_decode : PostResponse = PostResponse.decode(receive_post)
+
+
             while True:
                 
     except Exception as exn:

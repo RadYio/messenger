@@ -85,32 +85,33 @@ class MessageResponse(Message):
 
     code = Code.MESSAGES_RESPONSE
     nbrmsg : int
-    message_header : list[tuple[int, datetime, int, int]]
+    message_header : list[tuple[int, datetime, int, int, str]]
     message : list[str]
 
-    def __init__(self, userid : int, nbrmsg : int, message_header : list[tuple[int, datetime, int, int]], message : list[str]):
+    def __init__(self, userid : int, nbrmsg : int, message_header : list[tuple[int, datetime, int, int, str]]):
 
         self.userid = userid
         self.nbrmsg = nbrmsg
         self.message_header = message_header
-        self.message = message
+
 
     @classmethod    
     def decode(cls, data: bytes) -> MessageResponse :
         message_header : list[tuple[int, datetime, int, int]] = list()
-        message : list[str] = list()
         size_start = struct.calcsize('!BQB')
-        (_, userid, nbrmsg) = struct.unpack('!BQB', data[0:size_start])
+        (_, userid, nbrmsg) = struct.unpack('!BQB', data[:size_start])
         size_header = struct.calcsize('!QQQH')
-        for i in range (0, nbrmsg):
+
+        for i in range(0, nbrmsg):
             (messageid, datepub, userauthorid, lenghtmsg) = struct.unpack('!QQQH', data[size_start:size_start+size_header])
             message_header[i] = (messageid, datepub, userauthorid, lenghtmsg)
             size_start += size_header
-             
-        for i in range (0, nbrmsg):
-            message.append(data[size_start:message_header[i][3]].decode())
+
+        message : list[tuple[int, datetime, int, int, str]] = list()
+        for i in range(0, nbrmsg):
+            message[i] = (message_header[i][0], message_header[i][1], message_header[i][2], message_header[i][3], data[size_start:message_header[i][3]].decode())
             size_start += message_header[i][3]
-        return MessageResponse(userid, nbrmsg, message_header, message)
+        return MessageResponse(userid, nbrmsg, message)
 
     def encode(self) -> bytes :
             msgresponse = struct.pack('!BQB', self.code, self.userid, self.nbrmsg)
