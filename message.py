@@ -256,7 +256,7 @@ class UsersRequest(Message):
         list_of_users_id : list[int] = list()
 
         for _ in range(nbr_user_request): 
-            (temp, _) = struct.unpack('!Q', data[first_unpack:first_unpack + size_of_user])
+            (temp,) = struct.unpack('!Q', data[first_unpack:first_unpack + size_of_user])
             
             first_unpack += size_of_user
             list_of_users_id.append(temp)
