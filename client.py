@@ -12,9 +12,45 @@ from queue import Queue, Empty
 from threading import Thread
 
 from connection import Client
-from message import message
+from message import *
 
 exceptions: list[Exception] = []
+
+
+def smart_handler(inqueue: Queue[str], outqueue: Queue[list[message[str]]], address: tuple[str, int], username : str, password : str):
+    counter = 0
+    threadid_temp : int = 0
+    try:
+        with Client().connect(address) as conn:
+            mon_id : int
+            connect = ConnectRequest(0, username, password)
+            conn.send(connect.encode())
+
+            receive_connect = conn.recv()
+            receive_connect_decode : ConnectResponse = ConnectResponse().decode(receive_connect)
+            mon_id = receive_connect_decode.userid
+            while True:
+                user = UsersRequest(mon_id, )
+                conn.send(user.encode())
+
+                receive_user = conn.recv()
+                receive_user_decode : UsersResponse = UsersResponse().decode(receive_user)
+
+                message = MessageRequest(0, threadid_temp, 10)
+                conn.send(message.encode())
+
+                receive_message = conn.recv()
+                receive_message_decode : MessageResponse = MessageResponse().decode(receive_message)
+                print_message(, username, receive_message_decode)
+    except Exception as exn:
+        exceptions.append(exn)
+
+#while True:
+       #message = inqueue.get()
+       #conn.send(message.encode())
+        #message = conn.recv().decode()
+        #counter += 1
+        #outqueue.put([(counter, datetime.now(), 1, message)])
 
 
 def dummy_handler(inqueue: Queue[str], outqueue: Queue[list[message[str]]], address: tuple[str, int]):
@@ -105,7 +141,7 @@ def main(window: curses.window, address: tuple[str, int], username: str, passwor
     outqueue: Queue[list[message[str]]] = Queue()
     usernames: dict[int, str] = {}
 
-    thread = Thread(target=dummy_handler, args=(inqueue, outqueue, address), daemon=True)
+    thread = Thread(target=smart_handler, args=(inqueue, outqueue, address, username, password), daemon=True)
     thread.start()
 
     # Initialize terminal windows

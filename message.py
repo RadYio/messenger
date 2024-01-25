@@ -275,12 +275,12 @@ class UsersResponse(Message):
 
     code = Code.USERS_RESPONSE    
     userid : int
-    nbr_user_request : bytes
+    nbr_user_request : int
     list_userid : list[int]
     list_of_users : list[tuple[int, str]]
     
 
-    def __init__(self, userid : int, nbr_user_request : bytes, list_userid : list[int], list_of_users : list[tuple[int, str]]):
+    def __init__(self, userid : int, nbr_user_request : int, list_userid : list[int], list_of_users : list[tuple[int, str]]):
         self.userid = userid
         self.nbr_user_request = nbr_user_request
         self.list_userid = list_userid
