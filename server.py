@@ -31,6 +31,7 @@ def smart_handler(conn: Connection):
                         message = MessageRequest.decode(data)
                         all_messages : list[tuple[int, datetime, int, str]] = the_bdd.get_x_message(message.nbrmsg)
                         message_header : list[tuple[int, datetime, int, int]] = list()
+                        
                         # Pour tous tous les messages, on ajoute le header
                         for msg in all_messages:
                             message_header.append((msg[0], msg[1], msg[2], len(msg[3])))
