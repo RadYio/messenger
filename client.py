@@ -60,10 +60,9 @@ def smart_handler(inqueue: Queue[str], outqueue: Queue[list[message[str]]], addr
 
 
 
-            while True:
-                
+            
     except Exception as exn:
-        exceptions.append(exn)
+        exceptions.append(exn)   
 
 #while True:
        #message = inqueue.get()

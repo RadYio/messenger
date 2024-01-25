@@ -281,14 +281,12 @@ class UsersResponse(Message):
     code = Code.USERS_RESPONSE    
     userid : int
     nbr_user_request : int
-    list_userid : list[int]
     list_of_users : list[tuple[int, str]]
     
 
-    def __init__(self, userid : int, nbr_user_request : int, list_userid : list[int], list_of_users : list[tuple[int, str]]):
+    def __init__(self, userid : int, nbr_user_request : int, list_of_users : list[tuple[int, str]]):
         self.userid = userid
         self.nbr_user_request = nbr_user_request
-        self.list_userid = list_userid
         self.list_of_users = list_of_users
 
 
@@ -297,37 +295,34 @@ class UsersResponse(Message):
 
         first_unpack = struct.calcsize('!BQB')
         (_, userid, nbr_user_request) = struct.unpack('!BQB', data[:first_unpack])
+        list_temp : list[tuple[int, int]] = list()
 
-        size_of_user = struct.calcsize('!Q')
-        list_of_users_id : list[int] = []
-
-        for _ in range(nbr_user_request):
-            (temp,) = struct.unpack('!Q', data[first_unpack:first_unpack + size_of_user])
-            first_unpack += size_of_user
-            list_of_users_id.append(temp)
-
-        size_of_username = struct.calcsize('!B')
-        list_of_users : list[tuple[int, str]] = []
+        size_of_response = struct.calcsize('!QB') # user: Q + size of username: B
 
         for _ in range(nbr_user_request):
-            user_id, username_length = struct.unpack('!QB', data[first_unpack:first_unpack + size_of_username])
-            first_unpack += size_of_username
-            username = data[first_unpack:first_unpack + username_length].decode()
-            first_unpack += username_length
-            list_of_users.append((user_id, username))
+            (id_ask, length_ask) = struct.unpack('!QB', data[first_unpack:first_unpack + size_of_response])
+            first_unpack += size_of_response
+            list_temp.append((id_ask, length_ask))
 
-        return UsersResponse(userid, nbr_user_request, list_of_users_id, list_of_users)
+        list_of_needed_users : list[tuple[int, str]] = list()
+
+        for element in list_temp:
+            (id_ask, length_ask) = element
+            username = data[first_unpack:first_unpack + length_ask].decode()
+            first_unpack += length_ask
+            list_of_needed_users.append((id_ask, username))
+
+
+        return UsersResponse(userid, nbr_user_request, list_of_needed_users)
 
     def encode(self) -> bytes:
         request = struct.pack('!BQB', self.code, self.userid, self.nbr_user_request)
 
-        for user_id in self.list_userid:
-            request += struct.pack('!Q', user_id)
+        for user in self.list_of_users:
+            request += struct.pack('!QB', user[0], len(user[1]))
 
-        for user_id, username in self.list_of_users:
-            username_length = len(username)
-            request += struct.pack('!QB', user_id, username_length)
-            request += username.encode()
+        for user in self.list_of_users:
+            request += user[1].encode()
 
         return request
     
