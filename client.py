@@ -18,7 +18,7 @@ exceptions: list[Exception] = []
 
 
 def smart_handler(inqueue: Queue[str], outqueue: Queue[list[message[str]]], address: tuple[str, int], username : str, password : str):
-    counter = 0
+    _counter = 0
     threadid_temp : int = 0
     try:
         with Client().connect(address) as conn:
@@ -27,21 +27,23 @@ def smart_handler(inqueue: Queue[str], outqueue: Queue[list[message[str]]], addr
             conn.send(connect.encode())
 
             receive_connect = conn.recv()
-            receive_connect_decode : ConnectResponse = ConnectResponse().decode(receive_connect)
+            receive_connect_decode : ConnectResponse = ConnectResponse.decode(receive_connect)
             mon_id = receive_connect_decode.userid
+        
+            message = MessageRequest(0, threadid_temp, 10)
+            conn.send(message.encode())
+
+            receive_message = conn.recv()
+            receive_message_decode : MessageResponse = MessageResponse.decode(receive_message)
+            outqueue.put(receive_message_decode.message)
+
+            user = UsersRequest(mon_id, 0, [0,0])
+            conn.send(user.encode())
+
+            receive_user = conn.recv()
+            _receive_user_decode : UsersResponse = UsersResponse.decode(receive_user)
             while True:
-                user = UsersRequest(mon_id, )
-                conn.send(user.encode())
-
-                receive_user = conn.recv()
-                receive_user_decode : UsersResponse = UsersResponse().decode(receive_user)
-
-                message = MessageRequest(0, threadid_temp, 10)
-                conn.send(message.encode())
-
-                receive_message = conn.recv()
-                receive_message_decode : MessageResponse = MessageResponse().decode(receive_message)
-                print_message(, username, receive_message_decode)
+                
     except Exception as exn:
         exceptions.append(exn)
 

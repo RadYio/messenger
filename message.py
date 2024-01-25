@@ -86,9 +86,9 @@ class MessageResponse(Message):
     code = Code.MESSAGES_RESPONSE
     nbrmsg : int
     message_header : list[tuple[int, datetime, int, int]]
-    message : str
+    message : list[str]
 
-    def __init__(self, userid : int, nbrmsg : int, message_header : list[tuple[int, datetime, int, int]], message : str):
+    def __init__(self, userid : int, nbrmsg : int, message_header : list[tuple[int, datetime, int, int]], message : list[str]):
 
         self.userid = userid
         self.nbrmsg = nbrmsg
@@ -98,15 +98,18 @@ class MessageResponse(Message):
     @classmethod    
     def decode(cls, data: bytes) -> MessageResponse :
         message_header : list[tuple[int, datetime, int, int]] = list()
+        message : list[str] = list()
         size_start = struct.calcsize('!BQB')
         (_, userid, nbrmsg) = struct.unpack('!BQB', data[0:size_start])
         size_header = struct.calcsize('!QQQH')
         for i in range (0, nbrmsg):
-            (messageid, datepub, userauthorid, lenghtmsg) = struct.unpack('!QQQH', data[size_start:size_header])
+            (messageid, datepub, userauthorid, lenghtmsg) = struct.unpack('!QQQH', data[size_start:size_start+size_header])
             message_header[i] = (messageid, datepub, userauthorid, lenghtmsg)
-            size_start = size_header
-            size_header += size_header 
-        message = data[size_header:].decode()
+            size_start += size_header
+             
+        for i in range (0, nbrmsg):
+            message.append(data[size_start:message_header[i][3]].decode())
+            size_start += message_header[i][3]
         return MessageResponse(userid, nbrmsg, message_header, message)
 
     def encode(self) -> bytes :
@@ -114,8 +117,9 @@ class MessageResponse(Message):
             for i in range (0,self.nbrmsg):
                 header = struct.pack('!QQQH', self.message_header[i])
                 msgresponse += header
-            byte_message = self.message.encode()
-            msgresponse += byte_message
+            for i in self.message :  
+                byte_message = i.encode()
+                msgresponse += byte_message
             return msgresponse
 
 class PostRequest(Message):
