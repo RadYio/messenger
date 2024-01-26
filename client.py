@@ -11,11 +11,47 @@ from datetime import datetime
 from queue import Queue, Empty
 from threading import Thread
 
-from connection import Client
+from connection import Client, Connection
 from message import *
-import time
+
 
 exceptions: list[Exception] = []
+
+
+def get_message_from_server_and_show_them(conn: Connection, mon_id: int, thread_id: int, dict_of_user_id: dict[int, str], last_message_timestamp: dict[int, float], outqueue: Queue[list[message[str]]], nb_message: int = 64) -> None:
+    # DEBUT DE LA DEMANDE DE MESSAGE
+    message = MessageRequest(mon_id, thread_id, nb_message)
+    conn.send(message.encode())
+
+    receive_message = conn.recv()
+    receive_message_decode: MessageResponse = MessageResponse.decode(receive_message)
+
+    userid_temp: list[int] = list()
+
+    # verification de la connaisance dans le dict
+    for mes in receive_message_decode.message_header:
+        if mes[2] not in dict_of_user_id and mes[2] not in userid_temp:
+            userid_temp.append(mes[2])
+
+    # si un user pas connu alors, userrequest, sinon go a la suite
+    user = UsersRequest(mon_id, len(userid_temp), userid_temp)
+    conn.send(user.encode())
+
+    receive_user = conn.recv()
+    receive_user_decode: UsersResponse = UsersResponse.decode(receive_user)
+    for users in receive_user_decode.list_of_users:
+        if users[0] not in dict_of_user_id:
+            dict_of_user_id[users[0]] = users[1]
+
+    # si un user pas connu alors, userrequest, sinon go a la suite
+    for mes in receive_message_decode.message_header:
+        message_timestamp = datetime.fromtimestamp(mes[1])
+        last_known_timestamp = last_message_timestamp.get(mes[2], datetime.min).timestamp()
+
+        # Check if the message is newer than the last known message for the user
+        if message_timestamp.timestamp() > last_known_timestamp:
+            outqueue.put([(mes[0], message_timestamp, mes[2], mes[4])])
+            last_message_timestamp[mes[2]] = message_timestamp.timestamp()
 
 
 def smart_handler(inqueue: Queue[str], outqueue: Queue[list[message[str]]], address: tuple[str, int], username : str, password : str, userid_dict : dict[int,str]):
@@ -32,35 +68,10 @@ def smart_handler(inqueue: Queue[str], outqueue: Queue[list[message[str]]], addr
             receive_connect_decode : ConnectResponse = ConnectResponse.decode(receive_connect)
             mon_id = receive_connect_decode.userid
             userid_dict[mon_id]=username
+            # FIN DE CONNEXION
 
-        
-            message = MessageRequest(mon_id, threadid_temp, 64)
-            conn.send(message.encode())
-
-            receive_message = conn.recv()
-            receive_message_decode : MessageResponse = MessageResponse.decode(receive_message)
-
-            userid_temp : list[int] = list()
-
-            # verification de la connaisance dans le dict
-            for mes in receive_message_decode.message_header:
-                if mes[2] not in userid_dict and mes[2] not in userid_temp:
-                    userid_temp.append(mes[2])
-
-            # si un user pas connu alors, userrequest, sinon go a la suite                 
-            user = UsersRequest(mon_id, len(userid_temp), userid_temp)
-            conn.send(user.encode())
-
-            receive_user = conn.recv()
-            receive_user_decode : UsersResponse = UsersResponse.decode(receive_user)
-            for users in receive_user_decode.list_of_users:
-                if users[0] not in userid_dict:
-                    userid_dict[users[0]]=users[1]
-
-            # si un user pas connu alors, userrequest, sinon go a la suite
-            for mes in receive_message_decode.message_header:
-                outqueue.put([(mes[0], datetime.fromtimestamp(mes[1]), mes[2], mes[4])])
-
+            # DEBUT DE LA DEMANDE DE MESSAGE
+            get_message_from_server_and_show_them(conn, mon_id, threadid_temp, userid_dict, outqueue)
             
             while True : 
                 # recuperer depuis la Queue les messages, les envoyer, et attendre la réponse pour verification et si bonne reponse
@@ -78,11 +89,8 @@ def smart_handler(inqueue: Queue[str], outqueue: Queue[list[message[str]]], addr
 
                     outqueue.put([(receive_post_decode.messageid, datetime.now(), receive_post_decode.userid,message)]) 
                 except Empty:
-                    pass
-
-                
-
-                         
+                    get_message_from_server_and_show_them(conn, mon_id, threadid_temp, userid_dict, outqueue, 10)
+ 
             
     except Exception as exn:
         exceptions.append(exn)   

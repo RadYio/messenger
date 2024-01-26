@@ -162,7 +162,8 @@ class PostResponse(Message):
 
     @classmethod
     def decode(cls, data: bytes) -> PostResponse :
-        (_, userid, threadid, messageid) = struct.unpack('!BQQQ', data)
+        size_header = struct.calcsize('!BQQQ')
+        (_, userid, threadid, messageid) = struct.unpack('!BQQQ', data[:size_header])
         return PostResponse(userid, threadid, messageid)   
     def encode(self) -> bytes:
         return struct.pack('!BQQQ', self.code, self.userid, self.threadid, self.messageid)
@@ -306,7 +307,7 @@ class UsersResponse(Message):
 
         for element in list_temp:
             (id_ask, length_ask) = element
-            username = data[first_unpack:first_unpack + length_ask].decode()
+            username = data[first_unpack:first_unpack + length_ask].decode(errors='replace')
             first_unpack += length_ask
             list_of_needed_users.append((id_ask, username))
 
