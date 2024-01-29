@@ -242,9 +242,8 @@ class UsersRequest(Message):
     nbr_user_request : int
     list_userid : list[int]
 
-    def __init__(self, userid : int, nbr_user_request : int, list_userid : list[int]):
+    def __init__(self, userid : int, list_userid : list[int]):
         self.userid = userid
-        self.nbr_user_request = nbr_user_request
         self.list_userid = list_userid
 
     @classmethod
@@ -262,18 +261,15 @@ class UsersRequest(Message):
             first_unpack += size_of_user
             list_of_users_id.append(temp)
 
-        return UsersRequest(userid, nbr_user_request, list_of_users_id)
+        return UsersRequest(userid, list_of_users_id)
 
     def encode(self) -> bytes:
-        request = struct.pack('!BQB', self.code, self.userid, self.nbr_user_request)
-
+        request = struct.pack('!BQB', self.code, self.userid, len(self.list_userid))
 
         for element in self.list_userid:
-            request  += struct.pack('!Q', element)
-
+            request += struct.pack('!Q', element)
+            
         return request
-
-
 
 
 class UsersResponse(Message):
