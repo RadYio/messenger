@@ -39,7 +39,10 @@ def ask_for_user_id(conn: Connection, mon_id: int, userid_temp : list[int], dict
             dict_of_user_id[users[0]]=users[1]
 
     with open("fesse.txt", "a") as fes:
-        fes.write(f"{fesse}\n {str(dict_of_user_id)}\n{str(userid_temp)}\n{str(receive_user_decode.list_of_users)}\n\n")
+        fes.write(f"{fesse}\n")
+        fes.write(f"encode:{str(user.encode())}\n ;")
+        fes.write(f"decode:{str(receive_user)}\n ;")
+        fes.write(f"{str(dict_of_user_id)}\n{str(userid_temp)}\n{str(receive_user_decode.list_of_users)}\n\n")
 
 def show_message_in_queue(outqueue: Queue[list[message[str]]], message_list : list[tuple[int, float, int, int, str]]) -> None:
     """Show message in queue
@@ -111,7 +114,7 @@ def smart_handler(inqueue: Queue[str], outqueue: Queue[list[message[str]]], addr
             
             while True : 
                 try:
-                    message = inqueue.get(timeout=2)
+                    message = inqueue.get(timeout=5)
                     post = PostRequest(mon_id, threadid_temp, len(message), message)
                     conn.send(post.encode())
 
