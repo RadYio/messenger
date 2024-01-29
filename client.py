@@ -27,12 +27,15 @@ def ask_for_user_id(conn: Connection, mon_id: int, userid_temp : list[int], dict
         if users[0] not in dict_of_user_id:
             dict_of_user_id[users[0]]=users[1]
 
+def show_message_in_queue(outqueue: Queue[list[message[str]]], message_list : list[tuple[int, float, int, int, str]]) -> None:
+    outqueue.put([(t[0], datetime.fromtimestamp(1), t[2], t[4]) for t in message_list])
 
 def get_message_from_server_and_show_them(conn: Connection, mon_id: int, thread_id: int, dict_of_user_id: dict[int, str], outqueue: Queue[list[message[str]]], nb_message: int = 64) -> None:
     # DEBUT DE LA DEMANDE DE MESSAGE
     message = MessageRequest(mon_id, thread_id, 64)
     conn.send(message.encode())
 
+    # RECEPTION DE MESSAGE
     receive_message = conn.recv()
     receive_message_decode : MessageResponse = MessageResponse.decode(receive_message)
 
@@ -47,6 +50,7 @@ def get_message_from_server_and_show_them(conn: Connection, mon_id: int, thread_
     ask_for_user_id(conn, mon_id, userid_temp, dict_of_user_id)
 
     # si un user pas connu alors, userrequest, sinon go a la suite
+    show_message_in_queue(outqueue, receive_message_decode.message_header)
     for mes in receive_message_decode.message_header:
         outqueue.put([(mes[0], datetime.fromtimestamp(mes[1]), mes[2], mes[4])])
 
