@@ -17,16 +17,26 @@ from message import *
 
 exceptions: list[Exception] = []
 
+def ask_for_user_id(conn: Connection, mon_id: int, userid_temp : list[int], dict_of_user_id : dict[int, str]) -> None:
+    user = UsersRequest(mon_id, len(userid_temp), userid_temp)
+    conn.send(user.encode())
 
-def get_message_from_server_and_show_them(conn: Connection, mon_id: int, thread_id: int, dict_of_user_id: dict[int, str], last_message_timestamp: dict[int, float], outqueue: Queue[list[message[str]]], nb_message: int = 64) -> None:
+    receive_user = conn.recv()
+    receive_user_decode : UsersResponse = UsersResponse.decode(receive_user)
+    for users in receive_user_decode.list_of_users:
+        if users[0] not in dict_of_user_id:
+            dict_of_user_id[users[0]]=users[1]
+
+
+def get_message_from_server_and_show_them(conn: Connection, mon_id: int, thread_id: int, dict_of_user_id: dict[int, str], outqueue: Queue[list[message[str]]], nb_message: int = 64) -> None:
     # DEBUT DE LA DEMANDE DE MESSAGE
-    message = MessageRequest(mon_id, thread_id, nb_message)
+    message = MessageRequest(mon_id, thread_id, 64)
     conn.send(message.encode())
 
     receive_message = conn.recv()
-    receive_message_decode: MessageResponse = MessageResponse.decode(receive_message)
+    receive_message_decode : MessageResponse = MessageResponse.decode(receive_message)
 
-    userid_temp: list[int] = list()
+    userid_temp : list[int] = list()
 
     # verification de la connaisance dans le dict
     for mes in receive_message_decode.message_header:
@@ -34,24 +44,14 @@ def get_message_from_server_and_show_them(conn: Connection, mon_id: int, thread_
             userid_temp.append(mes[2])
 
     # si un user pas connu alors, userrequest, sinon go a la suite
-    user = UsersRequest(mon_id, len(userid_temp), userid_temp)
-    conn.send(user.encode())
-
-    receive_user = conn.recv()
-    receive_user_decode: UsersResponse = UsersResponse.decode(receive_user)
-    for users in receive_user_decode.list_of_users:
-        if users[0] not in dict_of_user_id:
-            dict_of_user_id[users[0]] = users[1]
+    ask_for_user_id(conn, mon_id, userid_temp, dict_of_user_id)
 
     # si un user pas connu alors, userrequest, sinon go a la suite
     for mes in receive_message_decode.message_header:
-        message_timestamp = datetime.fromtimestamp(mes[1])
-        last_known_timestamp = last_message_timestamp.get(mes[2], datetime.min).timestamp()
+        outqueue.put([(mes[0], datetime.fromtimestamp(mes[1]), mes[2], mes[4])])
 
-        # Check if the message is newer than the last known message for the user
-        if message_timestamp.timestamp() > last_known_timestamp:
-            outqueue.put([(mes[0], message_timestamp, mes[2], mes[4])])
-            last_message_timestamp[mes[2]] = message_timestamp.timestamp()
+
+    
 
 
 def smart_handler(inqueue: Queue[str], outqueue: Queue[list[message[str]]], address: tuple[str, int], username : str, password : str, userid_dict : dict[int,str]):
@@ -74,11 +74,6 @@ def smart_handler(inqueue: Queue[str], outqueue: Queue[list[message[str]]], addr
             get_message_from_server_and_show_them(conn, mon_id, threadid_temp, userid_dict, outqueue)
             
             while True : 
-                # recuperer depuis la Queue les messages, les envoyer, et attendre la réponse pour verification et si bonne reponse
-                # afficher dans le chat via outqueue 
-                message = MessageRequest(mon_id, threadid_temp, 4)
-                conn.send(message.encode())
-
                 try:
                     message = inqueue.get(timeout=2)
                     post = PostRequest(mon_id, threadid_temp, len(message), message)
@@ -90,8 +85,8 @@ def smart_handler(inqueue: Queue[str], outqueue: Queue[list[message[str]]], addr
                     outqueue.put([(receive_post_decode.messageid, datetime.now(), receive_post_decode.userid,message)]) 
                 except Empty:
                     get_message_from_server_and_show_them(conn, mon_id, threadid_temp, userid_dict, outqueue, 10)
- 
-            
+
+    
     except Exception as exn:
         exceptions.append(exn)   
 
