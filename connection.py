@@ -34,6 +34,8 @@ class Connection:
 
     def recv(self) -> bytes:
         """Receive data from the socket of the connection. See `socket.recv`.
+        Check the 4-bytes big-endian header indicating the length of the subsequent data.
+        Loop until all data is received.
         
         Returns:
             bytes: Data received.
