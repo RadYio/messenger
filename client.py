@@ -45,7 +45,8 @@ def ask_for_user_id(conn: Connection, mon_id: int, userid_temp : list[int], dict
         fes.write(f"{str(dict_of_user_id)}\n{str(userid_temp)}\n{str(receive_user_decode.list_of_users)}\n\n")
 
 def show_message_in_queue(outqueue: Queue[list[message[str]]], message_list : list[tuple[int, float, int, int, str]]) -> None:
-    """Show message in queue
+    """Show message in queue.
+    Put message in queue if the message ID is greater than the last message ID in the queue.
     
     Args:
         outqueue (Queue[list[message[str]]]): Queue to put message in
@@ -54,9 +55,10 @@ def show_message_in_queue(outqueue: Queue[list[message[str]]], message_list : li
     """
     # On va recuperer le dernier message ID affiché dans la queue, on gere le cas ou la queue est vide
     last_displayed_message_id = outqueue.get()[-1][0] if not outqueue.empty() else -1
-
+    
     # Liste par comprehension :) pour recuperer les messages qui ont un ID plus grand que le dernier affiché
-    outqueue.put([(t[0], datetime.fromtimestamp(1), t[2], t[4]) for t in message_list if t[0] > last_displayed_message_id])
+    #msg[O] = id
+    outqueue.put([(msg[0], datetime.fromtimestamp(msg[1]), msg[2], msg[4]) for msg in message_list if msg[0] > last_displayed_message_id])
 
 def get_message_from_server_and_show_them(conn: Connection, mon_id: int, thread_id: int, dict_of_user_id: dict[int, str], outqueue: Queue[list[message[str]]], nb_message: int = 64) -> None:
     """Get message from server and show them.
