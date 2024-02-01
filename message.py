@@ -288,13 +288,13 @@ class UsersResponse(Message):
 
     @classmethod
     def decode(cls, data: bytes) -> UsersResponse :
-        first_unpack = struct.calcsize('!BQB')
-        (_, userid, nbr_user_request) = struct.unpack('!BQB', data[:first_unpack])
+        # Utilisation de !BQI avec I au lieu de B pour nbr_user_request car on a un int et non un byte 
+        # A vérifier si c'est bien ça
+        first_unpack = struct.calcsize('!BQI')
+        (_, userid, nbr_user_request) = struct.unpack('!BQI', data[:first_unpack])
         list_temp : list[tuple[int, int]] = list()
 
         size_of_response = struct.calcsize('!QB') # user: Q + size of username: B
-        with open("fesse2.txt", "a") as fes:
-                fes.write(f"x: {(userid, nbr_user_request)}\n")
         
         for i in range(nbr_user_request):
             (id_ask, length_ask) = struct.unpack('!QB', data[first_unpack:first_unpack + size_of_response])
@@ -316,7 +316,9 @@ class UsersResponse(Message):
         return UsersResponse(userid, nbr_user_request, list_of_needed_users)
 
     def encode(self) -> bytes:
-        request = struct.pack('!BQB', self.code, self.userid, self.nbr_user_request)
+        # Utilisation de !BQI avec I au lieu de B pour nbr_user_request car on a un int et non un byte 
+        # A vérifier si c'est bien ça
+        request = struct.pack('!BQI', self.code, self.userid, self.nbr_user_request)
 
         for user in self.list_of_users:
             request += struct.pack('!QB', user[0], len(user[1]))
