@@ -16,8 +16,7 @@ from message import *
 
 
 exceptions: list[Exception] = []
-global fesse
-fesse = 0
+
 def ask_for_user_id(conn: Connection, mon_id: int, userid_temp : list[int], dict_of_user_id : dict[int, str]) -> None:
     """Ask for user ID
     
@@ -27,8 +26,6 @@ def ask_for_user_id(conn: Connection, mon_id: int, userid_temp : list[int], dict
         userid_temp (list[int]): List of user ID
         dict_of_user_id (dict[int, str]): Dict of user ID
     """
-    global fesse
-    fesse += 1
     user = UsersRequest(mon_id, userid_temp)
     conn.send(user.encode())
 
@@ -38,11 +35,6 @@ def ask_for_user_id(conn: Connection, mon_id: int, userid_temp : list[int], dict
         if users[0] not in dict_of_user_id:
             dict_of_user_id[users[0]]=users[1]
 
-    with open("fesse.txt", "a") as fes:
-        fes.write(f"{fesse}\n")
-        fes.write(f"encode:{str(user.encode())} ;\n")
-        fes.write(f"decode:{str(receive_user)} ;\n")
-        fes.write(f"{str(dict_of_user_id)}\n{str(userid_temp)}\n{str(receive_user_decode.list_of_users)}\n\n")
 
 def show_message_in_queue(outqueue: Queue[list[message[str]]], message_list : list[tuple[int, float, int, int, str]]) -> None:
     """Show message in queue.
