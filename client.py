@@ -11,60 +11,123 @@ from datetime import datetime
 from queue import Queue, Empty
 from threading import Thread
 
-from connection import Client
+from connection import Client, Connection
 from message import *
 
+
 exceptions: list[Exception] = []
+global fesse
+fesse = 0
+def ask_for_user_id(conn: Connection, mon_id: int, userid_temp : list[int], dict_of_user_id : dict[int, str]) -> None:
+    """Ask for user ID
+    
+    Args:
+        conn (Connection): Connection to the server
+        mon_id (int): ID of the user
+        userid_temp (list[int]): List of user ID
+        dict_of_user_id (dict[int, str]): Dict of user ID
+    """
+    global fesse
+    fesse += 1
+    user = UsersRequest(mon_id, userid_temp)
+    conn.send(user.encode())
+
+    receive_user = conn.recv()
+    receive_user_decode = UsersResponse.decode(receive_user)
+    for users in receive_user_decode.list_of_users:
+        if users[0] not in dict_of_user_id:
+            dict_of_user_id[users[0]]=users[1]
+
+    with open("fesse.txt", "a") as fes:
+        fes.write(f"{fesse}\n")
+        fes.write(f"encode:{str(user.encode())} ;\n")
+        fes.write(f"decode:{str(receive_user)} ;\n")
+        fes.write(f"{str(dict_of_user_id)}\n{str(userid_temp)}\n{str(receive_user_decode.list_of_users)}\n\n")
+
+def show_message_in_queue(outqueue: Queue[list[message[str]]], message_list : list[tuple[int, float, int, int, str]]) -> None:
+    """Show message in queue
+    
+    Args:
+        outqueue (Queue[list[message[str]]]): Queue to put message in
+        message_list (list[tuple[int, float, int, int, str]]): List of message to put in queue
+        
+    """
+    # On va recuperer le dernier message ID affiché dans la queue, on gere le cas ou la queue est vide
+    last_displayed_message_id = outqueue.get()[-1][0] if not outqueue.empty() else -1
+
+    # Liste par comprehension :) pour recuperer les messages qui ont un ID plus grand que le dernier affiché
+    outqueue.put([(t[0], datetime.fromtimestamp(1), t[2], t[4]) for t in message_list if t[0] > last_displayed_message_id])
+
+def get_message_from_server_and_show_them(conn: Connection, mon_id: int, thread_id: int, dict_of_user_id: dict[int, str], outqueue: Queue[list[message[str]]], nb_message: int = 64) -> None:
+    """Get message from server and show them.
+        Ask for x message to the server, if there is a new user, ask for his name, then show the message in the queue.
+    
+    Args:
+    
+        conn (Connection): Connection to the server
+        mon_id (int): ID of the user
+        thread_id (int): ID of the thread
+        dict_of_user_id (dict[int, str]): Dict of user ID
+        outqueue (Queue[list[message[str]]]): Queue to put message in
+        nb_message (int, optional): Number of message to get from server. Defaults to 64.
+        
+    """
+    # DEBUT DE LA DEMANDE DE MESSAGE
+    message = MessageRequest(mon_id, thread_id, 64)
+    conn.send(message.encode())
+
+    # RECEPTION DE MESSAGE
+    receive_message = conn.recv()
+    receive_message_decode = MessageResponse.decode(receive_message)
+
+    userid_temp : list[int] = list()
+
+    # verification de la connaisance dans le dict
+    for mes in receive_message_decode.message_header:
+        if mes[2] not in dict_of_user_id and mes[2] not in userid_temp:
+            userid_temp.append(mes[2])
+
+    # si un user pas connu alors, userrequest, sinon go a la suite
+    ask_for_user_id(conn, mon_id, userid_temp, dict_of_user_id)
+
+    # si un user pas connu alors, userrequest, sinon go a la suite
+    show_message_in_queue(outqueue, receive_message_decode.message_header)
 
 
-def smart_handler(inqueue: Queue[str], outqueue: Queue[list[message[str]]], address: tuple[str, int], username : str, password : str):
-    counter = 0
+def smart_handler(inqueue: Queue[str], outqueue: Queue[list[message[str]]], address: tuple[str, int], username : str, password : str, userid_dict : dict[int,str]):
+    _counter = 0
     threadid_temp : int = 0
+    
     try:
         with Client().connect(address) as conn:
-            mon_id : int
             connect = ConnectRequest(0, username, password)
             conn.send(connect.encode())
 
             receive_connect = conn.recv()
-            receive_connect_decode : ConnectResponse = ConnectResponse().decode(receive_connect)
-            mon_id = receive_connect_decode.userid
-            while True:
-                user = UsersRequest(mon_id, )
-                conn.send(user.encode())
+            receive_connect_decode = ConnectResponse.decode(receive_connect)
+            mon_id : int = receive_connect_decode.userid
+            userid_dict[mon_id]=username
+            # FIN DE CONNEXION
 
-                receive_user = conn.recv()
-                receive_user_decode : UsersResponse = UsersResponse().decode(receive_user)
+            # DEBUT DE LA DEMANDE DE MESSAGE
+            get_message_from_server_and_show_them(conn, mon_id, threadid_temp, userid_dict, outqueue, 64)
+            
+            while True : 
+                try:
+                    message = inqueue.get(timeout=5)
+                    post = PostRequest(mon_id, threadid_temp, len(message), message)
+                    conn.send(post.encode())
 
-                message = MessageRequest(0, threadid_temp, 10)
-                conn.send(message.encode())
+                    receive_post = conn.recv()
+                    receive_post_decode = PostResponse.decode(receive_post)
 
-                receive_message = conn.recv()
-                receive_message_decode : MessageResponse = MessageResponse().decode(receive_message)
-                print_message(, username, receive_message_decode)
+                    outqueue.put([(receive_post_decode.messageid, datetime.now(), receive_post_decode.userid,message)]) 
+                except Empty:
+                    get_message_from_server_and_show_them(conn, mon_id, threadid_temp, userid_dict, outqueue, 10)
+
+    
     except Exception as exn:
-        exceptions.append(exn)
-
-#while True:
-       #message = inqueue.get()
-       #conn.send(message.encode())
-        #message = conn.recv().decode()
-        #counter += 1
-        #outqueue.put([(counter, datetime.now(), 1, message)])
-
-
-def dummy_handler(inqueue: Queue[str], outqueue: Queue[list[message[str]]], address: tuple[str, int]):
-    counter = 0
-    try:
-        with Client().connect(address) as conn:
-            while True:
-                message = inqueue.get()
-                conn.send(message.encode())
-                message = conn.recv().decode()
-                counter += 1
-                outqueue.put([(counter, datetime.now(), 1, message)])
-    except Exception as exn:
-        exceptions.append(exn)
+        exceptions.append(exn)   
 
 
 def print_message(window: curses.window, usernames: dict[int, str], message: message[str]):
@@ -141,7 +204,7 @@ def main(window: curses.window, address: tuple[str, int], username: str, passwor
     outqueue: Queue[list[message[str]]] = Queue()
     usernames: dict[int, str] = {}
 
-    thread = Thread(target=smart_handler, args=(inqueue, outqueue, address, username, password), daemon=True)
+    thread = Thread(target=smart_handler, args=(inqueue, outqueue, address, username, password, usernames), daemon=True)
     thread.start()
 
     # Initialize terminal windows

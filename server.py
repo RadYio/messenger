@@ -26,58 +26,79 @@ def smart_handler(conn: Connection):
                 
                 match Code.decode(data):
                     case Code.MESSAGES_REQUEST:
-                        logging.info(f'{thread.name} fileno {conn.fileno()}: MESSAGES_REQUEST')
 
+                        logging.info(f'{thread.name} fileno {conn.fileno()}: MESSAGES_REQUEST')
                         message = MessageRequest.decode(data)
-                        all_messages : list[tuple[int, datetime, int, str]] = the_bdd.get_x_message(message.nbrmsg)
-                        message_header : list[tuple[int, datetime, int, int]] = list()
-                        
+
+                        logging.info(f'{thread.name} fileno {conn.fileno()}: [MESSAGES_REQUEST] Demande de {message.nbrmsg} messages de la part de {message.userid}')
+                        all_messages : list[tuple[int, float, int, str]] = the_bdd.get_x_message(message.nbrmsg)
+                        message_header : list[tuple[int, float, int, int, str]] = list()
+
                         # Pour tous tous les messages, on ajoute le header
                         for msg in all_messages:
-                            message_header.append((msg[0], msg[1], msg[2], len(msg[3])))
-                        message2 = MessageResponse(message.userid, message.nbrmsg, message_header, all_messages[0][3])
+                            logging.info(f'{thread.name} fileno {conn.fileno()}: [MESSAGES_REQUEST] Demande de {msg[0]} {msg[1]} {msg[2]} {msg[3]}')
+                            message_header.append((msg[0], msg[1], msg[2], len(msg[3]), msg[3]))
+
+                        message2 = MessageResponse(message.userid, len(all_messages), message_header)
 
                         # Envoie de la réponse
                         conn.send(message2.encode())
                     case Code.USERS_REQUEST:
-                        logging.info(f'{thread.name} fileno {conn.fileno()}: USER_REQUEST')
-                        ...
+                        logging.info(f'{thread.name} fileno {conn.fileno()}: [USERS_REQUEST]')
                         message  = UsersRequest.decode(data)
+
+                        list_of_users : list[tuple[int, str]] = list()
+
+                        logging.info(f'{thread.name} fileno {conn.fileno()}: [USERS_REQUEST] Demande de {message.nbr_user_request} users de la part de {message.userid}')
+                        for user_id_ask in message.list_userid:
+                            logging.info(f'{thread.name} fileno {conn.fileno()}: [USERS_REQUEST] Demande de {user_id_ask}')
+                            username : str = the_bdd.get_username(user_id_ask)
+                            logging.info(f'{thread.name} fileno {conn.fileno()}: [USERS_REQUEST] Username de {user_id_ask} est {username}')
+                            list_of_users.append((user_id_ask, username))
+
+                        message2 = UsersResponse(message.userid, len(list_of_users), list_of_users)
+                        conn.send(message2.encode())
 
                     case Code.CONNECT_REQUEST:
                         logging.info(f'{thread.name} fileno {conn.fileno()}: CONNECT_REQUEST')
 
                         message = ConnectRequest.decode(data)
-                        logging.info(f'{thread.name} fileno {conn.fileno()}: Check if username: {message.username} exists')
+                        logging.info(f'{thread.name} fileno {conn.fileno()}: [CONNECT_REQUEST] Check if username: {message.username} exists')
 
                         if the_bdd.username_exists(message.username):
-                            logging.info(f'{thread.name} fileno {conn.fileno()}: yes, now check if password is correct')
+                            logging.info(f'{thread.name} fileno {conn.fileno()}: [CONNECT_REQUEST] yes, now check if password is correct')
                             user_id_of_the_session = the_bdd.check_connexion(message.username, message.passwd)
-                            logging.info(f'{thread.name} fileno {conn.fileno()}: yes, good password')
+                            if user_id_of_the_session == -1:
+                                logging.info(f'{thread.name} fileno {conn.fileno()}: [CONNECT_REQUEST] bad password')
+                            else:
+                                logging.info(f'{thread.name} fileno {conn.fileno()}: [CONNECT_REQUEST] yes, good password')
+                            
 
                         else:
                             user_id_of_the_session = the_bdd.add_user(message.username, message.passwd)
-                            logging.info(f'{thread.name} fileno {conn.fileno()}: No, create a new user')
+                            logging.info(f'{thread.name} fileno {conn.fileno()}: [CONNECT_REQUEST] No, create a new user')
 
-                        logging.info(f'{thread.name} fileno {conn.fileno()}: Create the response with the user_id = {user_id_of_the_session}')
+                        logging.info(f'{thread.name} fileno {conn.fileno()}: [CONNECT_REQUEST] Create the response with the user_id = {user_id_of_the_session}')
                         message2 = ConnectResponse(user_id_of_the_session) 
 
-                        logging.info(f'{thread.name} fileno {conn.fileno()}: Send the response')
+                        logging.info(f'{thread.name} fileno {conn.fileno()}: [CONNECT_REQUEST] Send the response')
                         conn.send(message2.encode())
 
                     case Code.POST_REQUEST:
-                        logging.info(f'{thread.name} fileno {conn.fileno()}: POST_REQUEST')
+                        logging.info(f'{thread.name} fileno {conn.fileno()}: [POST_REQUEST]')
                         message = PostRequest.decode(data)
 
-                        #Check if the userid provided is the same as the one in the session
+                        #Check if the userid provided is the same as the one in the session even if tls we should have private and public key
+                        logging.info(f'{thread.name} fileno {conn.fileno()}: [POST_REQUEST] Check if the userid provided is the same as the one in the session')
                         if user_id_of_the_session == message.userid:
                             id_message : int = the_bdd.add_new_message(datetime.now(), message.userid, message.message)
-
+                            logging.info(f'{thread.name} fileno {conn.fileno()}: [POST_REQUEST] Message added with id {id_message}')
                             # A Corriger on pourrait mettre le threadid à 0 en default et verifier le renvoie de l'user id
                             message2 = PostResponse(message.userid, 0, id_message)
                         else:
                             message2 = PostResponse(message.userid, 0, -1)
                         
+                        logging.info(f'{thread.name} fileno {conn.fileno()}: [POST_REQUEST] Send the response')
                         conn.send(message2.encode())
 
                     case _:
