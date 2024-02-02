@@ -10,6 +10,15 @@ from datetime import datetime
 NAME_OF_BDD_FILE = "bdd.pickle"
 
 def hash512(password : str) -> str:
+    """Hash the password with SHA512.
+    
+    Args:
+        password (str): password to hash.
+        
+    Returns:
+        str: hashed password.
+    
+    """
     h = hashlib.new('sha512')
     h.update(password.encode())
     return h.hexdigest()
@@ -59,14 +68,15 @@ class Bdd():
         # Check if the file exists and create a new database from scratch if not
         if not os.path.isfile(NAME_OF_BDD_FILE):
             print("Bdd created from scratch")
+            motd = "Bienvenue sur le chat"
             empty_bdd : Bdd = Bdd()
             empty_bdd.add_user("admin", "admin")
             empty_bdd.add_user("user", "user")
-            empty_bdd.add_new_message(datetime.now(), 1, "Bienvenue sur le chat")
-            empty_bdd.add_new_message(datetime.now(), 2, "="*20)
+            empty_bdd.add_new_message(datetime.now(), 1, motd)
+            empty_bdd.add_new_message(datetime.now(), 1, "="*len(motd))
             return empty_bdd
 
-        # Load the database from the disk and check the signature to avoid tampering héhé
+        # Load the database from the disk and check the signature to avoid tampering héhé SUJET 2
         with open(NAME_OF_BDD_FILE, 'rb') as f:
             signature = f.read(64)
             data = f.read()
@@ -81,6 +91,15 @@ class Bdd():
     
 
     def save_bdd_on_disk(self, secret_key: bytes = b'password') -> bytes:
+        """Save the database on the disk. The database is signed with HMAC-SHA512.
+        
+        Args:
+            secret_key (bytes, optional): Secret key used to sign the database. Defaults to b'password'.
+            
+        Returns:    
+            bytes: The signature of the database.
+            
+        """
         with self.lock_user:
             data = pickle.dumps(self)
             signature = hmac.new(secret_key, data, hashlib.sha512).digest()
@@ -99,11 +118,11 @@ class Bdd():
         Returns:
             bool: True if the username is already used, False otherwise.
         """
-        
-        for user in self.list_of_users:
-            if user[1] == username:
-                return True
-        return False
+        with self.lock_user:
+            for user in self.list_of_users:
+                if user[1] == username:
+                    return True
+            return False
     
     def add_user(self, username : str, password : str) -> int:
         """Add a user to the database. ⚠️⚠️We are using the lock here⚠️⚠️
@@ -141,6 +160,16 @@ class Bdd():
             return -1
         
     def add_new_message(self, datetime_of_message : datetime, author_id: int, text_message: str) -> int:
+        """Add a new message to the database. ⚠️⚠️We are using the lock here⚠️⚠️
+        
+        Args:
+            datetime_of_message (datetime): date and time of the message.
+            author_id (int): id of the author.
+            text_message (str): text of the message.
+            
+        Returns:
+            int: id of the message added.
+        """
         with self.lock_message:
             id_of_message : int = len(self.list_of_messages) + 1
 
@@ -151,22 +180,33 @@ class Bdd():
 
 
     def get_x_message(self, nb_of_message_request : int = 20) -> list[tuple[int, float, int, str]]:
+        """Get the last x messages. ⚠️⚠️We are using the lock here⚠️⚠️
+
+        Args:
+            nb_of_message_request (int, optional): number of messages requested. Defaults to 20.
+
+        Returns:
+            list[tuple[int, float, int, str]]: list of the last x messages.
+        """
         with self.lock_message:
             nb_message_in_list : int = len(self.list_of_messages)
             nb_message : int = nb_message_in_list if nb_of_message_request > nb_message_in_list else nb_of_message_request
             return self.list_of_messages[nb_message_in_list - nb_message:]
         
     def get_username(self, user_id : int) -> str:
+        """Get the username from the user_id. ⚠️⚠️We are using the lock here⚠️⚠️
+        
+        Args:
+            user_id (int): id of the user.
+            
+        Returns:
+            str: username of the user.
+                
+        """
         with self.lock_user:
             for user in self.list_of_users:
                 if user[0] == user_id:
                     return user[1]
             return "Unknown"
-        
-
-
-# try with so many threads that some of them are killed by the OS before they can finish
-#for i in range(10000):
-    #th.Thread(target=labdd.add_user, args=(f"Userr{i}", f"Password{i}")).start()
 
 

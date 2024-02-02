@@ -4,6 +4,7 @@ import curses
 import curses.ascii
 import getpass
 import traceback
+import time
 
 from argparse import ArgumentParser
 from collections import deque
@@ -87,21 +88,41 @@ def get_message_from_server_and_show_them(conn: Connection, mon_id: int, thread_
     # si un user pas connu alors, userrequest, sinon go a la suite
     show_message_in_queue(outqueue, receive_message_decode.message_header)
 
+def auth_to_server(conn: Connection, username: str, password: str, userid_dict : dict[int,str]) -> int:
+    """Authentification to the server
+
+    Args:
+        conn (Connection): Connection to the server
+        username (str): Username
+        password (str): Password
+        userid_dict (dict[int,str]): Dict of user ID
+
+    Returns:
+        int: ID of the user if the authentification is successful else -1
+
+    """
+    connect = ConnectRequest(0, username, password)
+    conn.send(connect.encode())
+
+    receive_connect = conn.recv()
+    receive_connect_decode = ConnectResponse.decode(receive_connect)
+    mon_id : int = receive_connect_decode.userid
+    userid_dict[mon_id]=username
+    return mon_id
+    
+
 
 def smart_handler(inqueue: Queue[str], outqueue: Queue[list[message[str]]], address: tuple[str, int], username : str, password : str, userid_dict : dict[int,str]):
-    _counter = 0
     threadid_temp : int = 0
     
     try:
         with Client().connect(address) as conn:
-            connect = ConnectRequest(0, username, password)
-            conn.send(connect.encode())
-
-            receive_connect = conn.recv()
-            receive_connect_decode = ConnectResponse.decode(receive_connect)
-            mon_id : int = receive_connect_decode.userid
-            userid_dict[mon_id]=username
-            # FIN DE CONNEXION
+            mon_id = auth_to_server(conn, username, password, userid_dict)
+            # Check if the authentification is successful
+            if mon_id < 1:
+                show_message_in_queue(outqueue, [(mon_id, datetime.now().timestamp(), 0, 0, "Authentification failed")])
+                time.sleep(2)
+                exit(0)
 
             # DEBUT DE LA DEMANDE DE MESSAGE
             get_message_from_server_and_show_them(conn, mon_id, threadid_temp, userid_dict, outqueue, 64)

@@ -15,6 +15,7 @@ def smart_handler(conn: Connection):
     # A smart echo handler
     thread = current_thread()
 
+    # Use it to ensure that the authentication is done before post messages
     user_id_of_the_session : int = -1
 
     with conn:
@@ -72,8 +73,6 @@ def smart_handler(conn: Connection):
                                 logging.info(f'{thread.name} fileno {conn.fileno()}: [CONNECT_REQUEST] bad password')
                             else:
                                 logging.info(f'{thread.name} fileno {conn.fileno()}: [CONNECT_REQUEST] yes, good password')
-                            
-
                         else:
                             user_id_of_the_session = the_bdd.add_user(message.username, message.passwd)
                             logging.info(f'{thread.name} fileno {conn.fileno()}: [CONNECT_REQUEST] No, create a new user')
@@ -88,7 +87,7 @@ def smart_handler(conn: Connection):
                         logging.info(f'{thread.name} fileno {conn.fileno()}: [POST_REQUEST]')
                         message = PostRequest.decode(data)
 
-                        #Check if the userid provided is the same as the one in the session even if tls we should have private and public key
+                        #Check if the userid provided is the same as the one in the session even if with tls we should have private and public key
                         logging.info(f'{thread.name} fileno {conn.fileno()}: [POST_REQUEST] Check if the userid provided is the same as the one in the session')
                         if user_id_of_the_session == message.userid:
                             id_message : int = the_bdd.add_new_message(datetime.now(), message.userid, message.message)
@@ -108,20 +107,6 @@ def smart_handler(conn: Connection):
 
         except BrokenPipeError:
             logging.info(f'{thread.name} fileno {conn.fileno()} closed the connection')
-        except Exception as exn:
-            logging.error(f'{thread.name}: {repr(exn)}')
-
-def dummy_handler(conn: Connection):
-    # A dummy echo handler
-    thread = current_thread()
-    with conn:
-        try:
-            while True:
-                # Receive some data from a connection
-                data = conn.recv()
-                logging.debug(f'{thread.name} fileno {conn.fileno()}: {repr(data)}')
-                # Send the data back to the connection
-                conn.send(data)
         except Exception as exn:
             logging.error(f'{thread.name}: {repr(exn)}')
 
@@ -160,8 +145,9 @@ def main():
     except KeyboardInterrupt:
         logging.info("Server interrupted by Ctrl+C")
     finally:
-        logging.info('Bye Admin!')
         the_bdd.save_bdd_on_disk()
+        logging.info('Bye Admin!')
+        
 
 
 if __name__ == '__main__':
