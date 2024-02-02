@@ -4,6 +4,7 @@ import curses
 import curses.ascii
 import getpass
 import traceback
+import time
 
 from argparse import ArgumentParser
 from collections import deque
@@ -16,8 +17,12 @@ from message import *
 
 
 exceptions: list[Exception] = []
-global fesse
-fesse = 0
+
+
+global last_displayed_message_id
+last_displayed_message_id = 0
+
+
 def ask_for_user_id(conn: Connection, mon_id: int, userid_temp : list[int], dict_of_user_id : dict[int, str]) -> None:
     """Ask for user ID
     
@@ -27,8 +32,6 @@ def ask_for_user_id(conn: Connection, mon_id: int, userid_temp : list[int], dict
         userid_temp (list[int]): List of user ID
         dict_of_user_id (dict[int, str]): Dict of user ID
     """
-    global fesse
-    fesse += 1
     user = UsersRequest(mon_id, userid_temp)
     conn.send(user.encode())
 
@@ -38,25 +41,25 @@ def ask_for_user_id(conn: Connection, mon_id: int, userid_temp : list[int], dict
         if users[0] not in dict_of_user_id:
             dict_of_user_id[users[0]]=users[1]
 
-    with open("fesse.txt", "a") as fes:
-        fes.write(f"{fesse}\n")
-        fes.write(f"encode:{str(user.encode())} ;\n")
-        fes.write(f"decode:{str(receive_user)} ;\n")
-        fes.write(f"{str(dict_of_user_id)}\n{str(userid_temp)}\n{str(receive_user_decode.list_of_users)}\n\n")
 
 def show_message_in_queue(outqueue: Queue[list[message[str]]], message_list : list[tuple[int, float, int, int, str]]) -> None:
-    """Show message in queue
+    """Show message in queue.
+    Put message in queue if the message ID is greater than the last message ID in the queue.
     
     Args:
         outqueue (Queue[list[message[str]]]): Queue to put message in
         message_list (list[tuple[int, float, int, int, str]]): List of message to put in queue
         
     """
-    # On va recuperer le dernier message ID affiché dans la queue, on gere le cas ou la queue est vide
-    last_displayed_message_id = outqueue.get()[-1][0] if not outqueue.empty() else -1
+    global last_displayed_message_id
 
-    # Liste par comprehension :) pour recuperer les messages qui ont un ID plus grand que le dernier affiché
-    outqueue.put([(t[0], datetime.fromtimestamp(1), t[2], t[4]) for t in message_list if t[0] > last_displayed_message_id])
+    messages_to_display = [(msg[0], datetime.fromtimestamp(msg[1]), msg[2], msg[4]) for msg in message_list if msg[0] > last_displayed_message_id]
+    
+    if messages_to_display:
+        last_displayed_message_id = messages_to_display[-1][0]
+        # Liste par comprehension :) pour recuperer les messages qui ont un ID plus grand que le dernier affiché
+        #msg[O] = id
+        outqueue.put(messages_to_display)
 
 def get_message_from_server_and_show_them(conn: Connection, mon_id: int, thread_id: int, dict_of_user_id: dict[int, str], outqueue: Queue[list[message[str]]], nb_message: int = 64) -> None:
     """Get message from server and show them.
@@ -93,21 +96,41 @@ def get_message_from_server_and_show_them(conn: Connection, mon_id: int, thread_
     # si un user pas connu alors, userrequest, sinon go a la suite
     show_message_in_queue(outqueue, receive_message_decode.message_header)
 
+def auth_to_server(conn: Connection, username: str, password: str, userid_dict : dict[int,str]) -> int:
+    """Authentification to the server
+
+    Args:
+        conn (Connection): Connection to the server
+        username (str): Username
+        password (str): Password
+        userid_dict (dict[int,str]): Dict of user ID
+
+    Returns:
+        int: ID of the user if the authentification is successful else -1
+
+    """
+    connect = ConnectRequest(0, username, password)
+    conn.send(connect.encode())
+
+    receive_connect = conn.recv()
+    receive_connect_decode = ConnectResponse.decode(receive_connect)
+    mon_id : int = receive_connect_decode.userid
+    userid_dict[mon_id]=username
+    return mon_id
+    
+
 
 def smart_handler(inqueue: Queue[str], outqueue: Queue[list[message[str]]], address: tuple[str, int], username : str, password : str, userid_dict : dict[int,str]):
-    _counter = 0
     threadid_temp : int = 0
     
     try:
         with Client().connect(address) as conn:
-            connect = ConnectRequest(0, username, password)
-            conn.send(connect.encode())
-
-            receive_connect = conn.recv()
-            receive_connect_decode = ConnectResponse.decode(receive_connect)
-            mon_id : int = receive_connect_decode.userid
-            userid_dict[mon_id]=username
-            # FIN DE CONNEXION
+            mon_id = auth_to_server(conn, username, password, userid_dict)
+            # Check if the authentification is successful
+            if mon_id < 1:
+                show_message_in_queue(outqueue, [(mon_id, datetime.now().timestamp(), 0, 0, "Authentification failed")])
+                time.sleep(2)
+                exit(0)
 
             # DEBUT DE LA DEMANDE DE MESSAGE
             get_message_from_server_and_show_them(conn, mon_id, threadid_temp, userid_dict, outqueue, 64)
