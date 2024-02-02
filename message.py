@@ -296,12 +296,10 @@ class UsersResponse(Message):
 
         size_of_response = struct.calcsize('!QB') # user: Q + size of username: B
         
-        for i in range(nbr_user_request):
+        for _ in range(nbr_user_request):
             (id_ask, length_ask) = struct.unpack('!QB', data[first_unpack:first_unpack + size_of_response])
             first_unpack += size_of_response
             list_temp.append((id_ask, length_ask))
-            with open("fesse2.txt", "a") as fes:
-                fes.write(f"{i} : {(id_ask, length_ask)}\n")
 
         list_of_needed_users : list[tuple[int, str]] = list()
 
