@@ -50,7 +50,7 @@ def smart_handler(conn: Connection):
 
                         list_of_users : list[tuple[int, str]] = list()
 
-                        logging.info(f'{thread.name} fileno {conn.fileno()}: [USERS_REQUEST] Demande de {message.nbr_user_request} users de la part de {message.userid}')
+                        logging.info(f'{thread.name} fileno {conn.fileno()}: [USERS_REQUEST] Demande de {len(message.list_userid)} users de la part de {message.userid}')
                         for user_id_ask in message.list_userid:
                             logging.info(f'{thread.name} fileno {conn.fileno()}: [USERS_REQUEST] Demande de {user_id_ask}')
                             username : str = the_bdd.get_username(user_id_ask)

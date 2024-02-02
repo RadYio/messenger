@@ -18,6 +18,11 @@ from message import *
 
 exceptions: list[Exception] = []
 
+
+global last_displayed_message_id
+last_displayed_message_id = 0
+
+
 def ask_for_user_id(conn: Connection, mon_id: int, userid_temp : list[int], dict_of_user_id : dict[int, str]) -> None:
     """Ask for user ID
     
@@ -46,12 +51,15 @@ def show_message_in_queue(outqueue: Queue[list[message[str]]], message_list : li
         message_list (list[tuple[int, float, int, int, str]]): List of message to put in queue
         
     """
-    # On va recuperer le dernier message ID affiché dans la queue, on gere le cas ou la queue est vide
-    last_displayed_message_id = outqueue.get()[-1][0] if not outqueue.empty() else -1
+    global last_displayed_message_id
+
+    messages_to_display = [(msg[0], datetime.fromtimestamp(msg[1]), msg[2], msg[4]) for msg in message_list if msg[0] > last_displayed_message_id]
     
-    # Liste par comprehension :) pour recuperer les messages qui ont un ID plus grand que le dernier affiché
-    #msg[O] = id
-    outqueue.put([(msg[0], datetime.fromtimestamp(msg[1]), msg[2], msg[4]) for msg in message_list if msg[0] > last_displayed_message_id])
+    if messages_to_display:
+        last_displayed_message_id = messages_to_display[-1][0]
+        # Liste par comprehension :) pour recuperer les messages qui ont un ID plus grand que le dernier affiché
+        #msg[O] = id
+        outqueue.put(messages_to_display)
 
 def get_message_from_server_and_show_them(conn: Connection, mon_id: int, thread_id: int, dict_of_user_id: dict[int, str], outqueue: Queue[list[message[str]]], nb_message: int = 64) -> None:
     """Get message from server and show them.

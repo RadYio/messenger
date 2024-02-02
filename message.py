@@ -239,7 +239,6 @@ class UsersRequest(Message):
     
     code = Code.USERS_REQUEST
     userid : int
-    nbr_user_request : int
     list_userid : list[int]
 
     def __init__(self, userid : int, list_userid : list[int]):
