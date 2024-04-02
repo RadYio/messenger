@@ -11,6 +11,7 @@ from gestionBdd import *
 
 the_bdd : Bdd = Bdd.load_bdd_from_disk() # Global variable
 
+
 def smart_handler(conn: Connection):
     # A smart echo handler
     thread = current_thread()
